@@ -5,29 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PoE Item JP to EN Converter</title>
   <style>
-    body { font-family: sans-serif; max-width: 900px; margin: 20px auto; padding: 0 20px; background: #1a1a1a; color: #e0e0e0; }
-    h1 { color: #af9456; text-align: center; }
-    .container { display: flex; gap: 20px; flex-wrap: wrap; }
-    .box { flex: 1; min-width: 300px; display: flex; flex-direction: column; }
-    textarea { height: 350px; background: #2a2a2a; color: #fff; border: 1px solid #444; padding: 10px; font-family: monospace; font-size: 13px; resize: vertical; }
-    button { margin: 15px 0; padding: 12px; font-size: 16px; background: #af9456; color: #000; font-weight: bold; border: none; cursor: pointer; border-radius: 4px; }
+    body { font-family: sans-serif; max-width: 950px; margin: 20px auto; padding: 0 20px; background: #1a1a1a; color: #e0e0e0; }
+    h1 { color: #af9456; text-align: center; margin-bottom: 5px; }
+    p { text-align: center; color: #aaa; font-size: 14px; }
+    .container { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 20px; }
+    .box { flex: 1; min-width: 320px; display: flex; flex-direction: column; }
+    label { font-weight: bold; margin-bottom: 8px; color: #af9456; }
+    textarea { height: 420px; background: #2a2a2a; color: #fff; border: 1px solid #444; padding: 12px; font-family: monospace; font-size: 13px; resize: vertical; box-sizing: border-box; }
+    button { display: block; width: 100%; margin: 20px 0; padding: 14px; font-size: 18px; background: #af9456; color: #000; font-weight: bold; border: none; cursor: pointer; border-radius: 4px; }
     button:hover { background: #cbb274; }
   </style>
 </head>
 <body>
 
-  <h1>PoE 日本語 ➔ 英語 アイテム変換器 (PoB用)</h1>
-  <p>ゲーム内で Ctrl + C した日本語アイテム情報を左に貼り付け、「変換」を押してください。</p>
+  <h1>PoE 日本語 ➔ 英語 アイテム変換器 (PoB対応版)</h1>
+  <p>ゲーム内で Ctrl + C したテキストを左に貼り付け、「変換」ボタンを押してください。</p>
 
   <div class="container">
     <div class="box">
       <label for="input">日本語データ (Ctrl+V)</label>
-      <textarea id="input" placeholder="レアリティ: レア..."></textarea>
+      <textarea id="input" placeholder="アイテムクラス: 手袋..."></textarea>
     </div>
 
     <div class="box">
       <label for="output">英語データ (PoBインポート用)</label>
-      <textarea id="output" readonly placeholder="Rarity: RARE..."></textarea>
+      <textarea id="output" readonly placeholder="Item Class: Gloves..."></textarea>
     </div>
   </div>
 
@@ -35,49 +37,120 @@
 
   <script>
     const dictionary = [
-      // レアリティ
-      { jp: /レアリティ:\ Normal/g, en: "Rarity: NORMAL" },
-      { jp: /レアリティ:\ Magic/g, en: "Rarity: MAGIC" },
-      { jp: /レアリティ:\ Rare/g, en: "Rarity: RARE" },
-      { jp: /レアリティ:\ Unique/g, en: "Rarity: UNIQUE" },
-      { jp: /レアリティ:\ ノーマル/g, en: "Rarity: NORMAL" },
-      { jp: /レアリティ:\ マジック/g, en: "Rarity: MAGIC" },
-      { jp: /レアリティ:\ レア/g, en: "Rarity: RARE" },
-      { jp: /レアリティ:\ ユニーク/g, en: "Rarity: UNIQUE" },
-
-      // ステータス
-      { jp: /クオリティ:/g, en: "Quality:" },
-      { jp: /物理ダメージ:/g, en: "Physical Damage:" },
-      { jp: /元素ダメージ:/g, en: "Elemental Damage:" },
-      { jp: /クリティカル率:/g, en: "Critical Strike Chance:" },
-      { jp: /秒間攻撃回数:/g, en: "Attacks per Second:" },
-      { jp: /アーマー:/g, en: "Armor:" },
-      { jp: /回避値:/g, en: "Evasion Rating:" },
+      // --- ヘッダー & ステータス ---
+      { jp: /^アイテムクラス:\ 手袋/gm, en: "Item Class: Gloves" },
+      { jp: /^アイテムクラス:\ マップフラグメント/gm, en: "Item Class: Map Fragments" },
+      { jp: /^アイテムクラス:/gm, en: "Item Class:" },
+      { jp: /^レアリティ:\ レア/gm, en: "Rarity: Rare" },
+      { jp: /^レアリティ:\ ノーマル/gm, en: "Rarity: Normal" },
+      { jp: /^レアリティ:\ マジック/gm, en: "Rarity: Magic" },
+      { jp: /^レアリティ:\ ユニーク/gm, en: "Rarity: Unique" },
+      
+      { jp: /品質:/g, en: "Quality:" },
+      { jp: /アーマー:/g, en: "Armour:" },
       { jp: /エナジーシールド:/g, en: "Energy Shield:" },
-      { jp: /要求レベル:/g, en: "Requires Level" },
-      { jp: /筋力/g, en: "Str" },
-      { jp: /器用さ/g, en: "Dex" },
-      { jp: /知性/g, en: "Int" },
+      { jp: /装備要求:/g, en: "Requirements:" },
+      { jp: /レベル:/g, en: "Level:" },
+      { jp: /筋力:/g, en: "Str:" },
+      { jp: /器用さ:/g, en: "Dex:" },
+      { jp: /知性:/g, en: "Int:" },
       { jp: /ソケット:/g, en: "Sockets:" },
       { jp: /アイテムレベル:/g, en: "Item Level:" },
 
-      // 代表的なモッド
-      { jp: /最大生命\+(\d+)/g, en: "+$1 to maximum Life" },
-      { jp: /最大マナ\+(\d+)/g, en: "+$1 to maximum Mana" },
-      { jp: /最大エナジーシールド\+(\d+)/g, en: "+$1 to maximum Energy Shield" },
-      { jp: /火耐性\+(\d+)%/g, en: "+$1% to Fire Resistance" },
-      { jp: /冷気耐性\+(\d+)%/g, en: "+$1% to Cold Resistance" },
-      { jp: /稲妻耐性\+(\d+)%/g, en: "+$1% to Lightning Resistance" },
-      { jp: /混沌耐性\+(\d+)%/g, en: "+$1% to Chaos Resistance" },
-      { jp: /すべての元素耐性\+(\d+)%/g, en: "+$1% to all Elemental Resistances" },
-      { jp: /移動速度 \+(\d+)%/g, en: "$1% increased Movement Speed" }
+      // --- ベースアイテム名 & 特殊アイテム ---
+      { jp: /容赦ない握拳/g, en: "Grim Grasp" },
+      { jp: /軍隊のグローブ/g, en: "Legion Gloves" },
+      { jp: /傭兵の召喚状/g, en: "Mercenary Warrant" },
+
+      // --- モッドヘッダー・タグ構造（ブラケット内） ---
+      { jp: /シアリング・エグザーク 暗黙モッド/g, en: "Searing Exarch Implicit Modifier" },
+      { jp: /イーター・オブ・ワールズ 暗黙モッド/g, en: "Eater of Worlds Implicit Modifier" },
+      { jp: /フラクチャー プレフィックスモッド/g, en: "Fractured Prefix Modifier" },
+      { jp: /マスタークラフト サフィックスモッド/g, en: "Master Crafted Suffix Modifier" },
+      { jp: /プレフィックスモッド/g, en: "Prefix Modifier" },
+      { jp: /サフィックスモッド/g, en: "Suffix Modifier" },
+      { jp: /「小」/g, en: "(Lesser)" },
+      { jp: /ティア:/g, en: "Tier:" },
+      { jp: /ランク:/g, en: "Rank:" },
+      
+      // タグ内部の単語
+      { jp: /ダメージ/g, en: "Damage" },
+      { jp: /元素/g, en: "Elemental" },
+      { jp: /冷気/g, en: "Cold" },
+      { jp: /アタック/g, en: "Attack" },
+      { jp: /ライフ/g, en: "Life" },
+      { jp: /防御/g, en: "Defences" },
+      { jp: /混沌/g, en: "Chaos" },
+      { jp: /耐性/g, en: "Resistance" },
+      { jp: /火/g, en: "Fire" },
+
+      // モッド名の固有表記
+      { jp: /「競技者の」/g, en: "\"Athlete's\"" },
+      { jp: /「聖油の」/g, en: "\"Anointed\"" },
+      { jp: /「修道僧の」/g, en: "\"Monk's\"" },
+      { jp: /「バメスの」/g, en: "\"of Bameth\"" },
+      { jp: /「悠久の」/g, en: "\"of Everlasting\"" },
+      { jp: /「作成の」/g, en: "\"of Craft\"" },
+
+      // --- モッド本文（数値キャプチャ対応） ---
+      { jp: /(\d+)\(([\d\-]+)\)から(\d+)\(([\d\-]+)\)の冷気ダメージをアタックに追加する/g, en: "Adds $1($2) to $3($4) Cold Damage to Attacks" },
+      { jp: /スペルダメージ抑制確率 \+(\d+)%/g, en: "+$1% chance to Suppress Spell Damage" },
+      { jp: /\(抑制したヒットによるダメージとそのヒットが付与した\n状態異常によるダメージの(\d+)%を防ぐ\)/g, en: "($1% of Damage from Suppressed Hits and Ailments they inflict is prevented)" },
+      { jp: /最大ライフ \+(\d+)\(([\d\-]+)\)/g, en: "+$1($2) to maximum Life" },
+      { jp: /アーマー \+(\d+)\(([\d\-]+)\)/g, en: "+$1($2) to Armour" },
+      { jp: /最大エナジーシールド \+(\d+)\(([\d\-]+)\)/g, en: "+$1($2) to maximum Energy Shield" },
+      { jp: /混沌耐性 \+(\d+)\(([\d\-]+)\)%/g, en: "+$1($2)% to Chaos Resistance" },
+      { jp: /ライフ自動回復レートが(\d+)\(([\d\-]+)\)%増加する/g, en: "$1($2)% increased Life Regeneration rate" },
+      { jp: /火および冷気耐性 \+(\d+)\(([\d\-]+)\)%/g, en: "+$1($2)% to Fire and Cold Resistances" },
+
+      // --- フッター情報 ---
+      { jp: /シアリング・エグザークのアイテム/g, en: "Searing Exarch Item" },
+      { jp: /イーター・オブ・ワールズのアイテム/g, en: "Eater of Worlds Item" },
+      { jp: /フラクチャーアイテム/g, en: "Fractured Item" },
+
+      // --- 傭兵・Warrant関連 ---
+      { jp: /シアクサンの姉、アモーラ/g, en: "Amora, the Cyaxan Sister" },
+      { jp: /ビルド:\ 悪名高きメニーショット/g, en: "Build: Infamous Manyshot" },
+      { jp: /傭兵のレベル:/g, en: "Mercenary Level:" },
+      
+      // 傭兵スキル & サポート
+      { jp: /アイスショット/g, en: "Ice Shot" },
+      { jp: /貫通/g, en: "Pierce" },
+      { jp: /アタック元素ダメージ/g, en: "Elemental Damage with Attacks" },
+      { jp: /グレーターハイポサーミア/g, en: "Greater Hypothermia" },
+      { jp: /回帰/g, en: "Return" },
+      { jp: /冷気耐性貫通/g, en: "Cold Penetration" },
+      { jp: /ヴァールグレース/g, en: "Vaal Grace" },
+      { jp: /ミラーアロー/g, en: "Mirror Arrow" },
+      { jp: /アタックスピード増加/g, en: "Faster Attacks" },
+      { jp: /ミニオンライフ/g, en: "Minion Life" },
+      { jp: /ミニオンダメージ/g, en: "Minion Damage" },
+      { jp: /ヴァールアイスショット/g, en: "Vaal Ice Shot" },
+      { jp: /連鎖/g, en: "Chain" },
+      { jp: /グレーターアタック元素ダメージ/g, en: "Greater Elemental Damage with Attacks" },
+      { jp: /ハイポサーミア/g, en: "Hypothermia" },
+      { jp: /ダッシュ/g, en: "Dash" },
+      { jp: /ブリンクアロー/g, en: "Blink Arrow" },
+      { jp: /クールダウン解消/g, en: "Cooldown Recovery" },
+
+      // 傭兵フレーバーテキスト
+      { jp: /このアイテムを右クリックして傭兵の詳細を見る。/g, en: "Right click this item to view Mercenary details." },
+      { jp: /マップデバイスでマップと共に使用して以前戦った傭兵をエリアに再出現させ、再戦できる。/g, en: "Can be used in a personal Map Device alongside a Map to have this previously fought Mercenary reappear in the area for a rematch." },
+      
+      // メモ・トレード用
+      { jp: /メモ:/g, en: "Note:" }
     ];
 
     function convertItem() {
       let text = document.getElementById("input").value;
+      
+      // 改行コードを統一 (\r\n -> \n)
+      text = text.replace(/\r\n/g, "\n");
+
       dictionary.forEach(rule => {
         text = text.replace(rule.jp, rule.en);
       });
+
       document.getElementById("output").value = text;
     }
   </script>
