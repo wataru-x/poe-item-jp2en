@@ -1,50 +1,130 @@
-[
-  { "jp": "^アイテムクラス:\\ 手袋", "flags": "gm", "en": "Item Class: Gloves" },
-  { "jp": "^アイテムクラス:\\ マップフラグメント", "flags": "gm", "en": "Item Class: Map Fragments" },
-  { "jp": "^アイテムクラス:", "flags": "gm", "en": "Item Class:" },
-  { "jp": "^レアリティ:\\ レア", "flags": "gm", "en": "Rarity: Rare" },
-  { "jp": "^レアリティ:\\ ノーマル", "flags": "gm", "en": "Rarity: Normal" },
-  { "jp": "品質:", "flags": "g", "en": "Quality:" },
-  { "jp": "アーマー:", "flags": "g", "en": "Armour:" },
-  { "jp": "エナジーシールド:", "flags": "g", "en": "Energy Shield:" },
-  { "jp": "装備要求:", "flags": "g", "en": "Requirements:" },
-  { "jp": "レベル:", "flags": "g", "en": "Level:" },
-  { "jp": "筋力:", "flags": "g", "en": "Str:" },
-  { "jp": "器用さ:", "flags": "g", "en": "Dex:" },
-  { "jp": "知性:", "flags": "g", "en": "Int:" },
-  { "jp": "ソケット:", "flags": "g", "en": "Sockets:" },
-  { "jp": "アイテムレベル:", "flags": "g", "en": "Item Level:" },
-
-  { "jp": "軍隊のグローブ", "flags": "g", "en": "Legion Gloves" },
-  { "jp": "傭兵の召喚状", "flags": "g", "en": "Mercenary Warrant" },
-
-  { "jp": "シアリング・エグザーク 暗黙モッド", "flags": "g", "en": "Searing Exarch Implicit Modifier" },
-  { "jp": "イーター・オブ・ワールズ 暗黙モッド", "flags": "g", "en": "Eater of Worlds Implicit Modifier" },
-  { "jp": "フラクチャー プレフィックスモッド", "flags": "g", "en": "Fractured Prefix Modifier" },
-  { "jp": "マスタークラフト サフィックスモッド", "flags": "g", "en": "Master Crafted Suffix Modifier" },
-  { "jp": "プレフィックスモッド", "flags": "g", "en": "Prefix Modifier" },
-  { "jp": "サフィックスモッド", "flags": "g", "en": "Suffix Modifier" },
-  { "jp": "「小」", "flags": "g", "en": "(Lesser)" },
-  { "jp": "ティア:", "flags": "g", "en": "Tier:" },
-  { "jp": "ランク:", "flags": "g", "en": "Rank:" },
-
-  { "jp": "「競技者の」", "flags": "g", "en": "\"Athlete's\"" },
-  { "jp": "「聖油の」", "flags": "g", "en": "\"Anointed\"" },
-  { "jp": "「修道僧の」", "flags": "g", "en": "\"Monk's\"" },
-  { "jp": "「バメスの」", "flags": "g", "en": "\"of Bameth\"" },
-  { "jp": "「悠久の」", "flags": "g", "en": "\"of Everlasting\"" },
-  { "jp": "「作成の」", "flags": "g", "en": "\"of Craft\"" },
-
-  { "jp": "(\\d+)\\(([\\d\\-]+)\\)から(\\d+)\\(([\\d\\-]+)\\)の冷気ダメージをアタックに追加する", "flags": "g", "en": "Adds $1($2) to $3($4) Cold Damage to Attacks" },
-  { "jp": "スペルダメージ抑制確率 \\+(\\d+)%", "flags": "g", "en": "+$1% chance to Suppress Spell Damage" },
-  { "jp": "最大ライフ \\+(\\d+)\\(([\\d\\-]+)\\)", "flags": "g", "en": "+$1($2) to maximum Life" },
-  { "jp": "アーマー \\+(\\d+)\\(([\\d\\-]+)\\)", "flags": "g", "en": "+$1($2) to Armour" },
-  { "jp": "最大エナジーシールド \\+(\\d+)\\(([\\d\\-]+)\\)", "flags": "g", "en": "+$1($2) to maximum Energy Shield" },
-  { "jp": "混沌耐性 \\+(\\d+)\\(([\\d\\-]+)\\)%", "flags": "g", "en": "+$1($2)% to Chaos Resistance" },
-  { "jp": "火および冷気耐性 \\+(\\d+)\\(([\\d\\-]+)\\)%", "flags": "g", "en": "+$1($2)% to Fire and Cold Resistances" },
-
-  { "jp": "シアクサンの姉、アモーラ", "flags": "g", "en": "Amora, the Cyaxan Sister" },
-  { "jp": "アイスショット", "flags": "g", "en": "Ice Shot" },
-  { "jp": "貫通", "flags": "g", "en": "Pierce" },
-  { "jp": "ヴァールグレース", "flags": "g", "en": "Vaal Grace" }
-]
+{
+  "header": {
+    "itemClasses": {
+      "手袋": "Gloves",
+      "マップフラグメント": "Map Fragments",
+      "指輪": "Rings",
+      "胸防具": "Body Armours"
+    },
+    "rarities": {
+      "ノーマル": "Normal",
+      "マジック": "Magic",
+      "レア": "Rare",
+      "ユニーク": "Unique"
+    },
+    "names": {
+      "容赦ない握拳": "Grim Grasp",
+      "軍隊のグローブ": "Legion Gloves",
+      "傭兵の召喚状": "Mercenary Warrant",
+      "シアクサンの姉、アモーラ": "Amora, the Cyaxan Sister"
+    }
+  },
+  "stats": {
+    "品質:": "Quality:",
+    "アーマー:": "Armour:",
+    "エナジーシールド:": "Energy Shield:",
+    "回避値:": "Evasion Rating:",
+    "装備要求:": "Requirements:",
+    "レベル:": "Level:",
+    "筋力:": "Str:",
+    "器用さ:": "Dex:",
+    "知性:": "Int:",
+    "ソケット:": "Sockets:",
+    "アイテムレベル:": "Item Level:",
+    "ビルド: 悪名高きメニーショット": "Build: Infamous Manyshot",
+    "傭兵のレベル:": "Mercenary Level:",
+    "メモ:": "Note:"
+  },
+  "metaTerms": {
+    "シアリング・エグザーク 暗黙モッド": "Searing Exarch Implicit Modifier",
+    "イーター・オブ・ワールズ 暗黙モッド": "Eater of Worlds Implicit Modifier",
+    "フラクチャー プレフィックスモッド": "Fractured Prefix Modifier",
+    "マスタークラフト サフィックスモッド": "Master Crafted Suffix Modifier",
+    "プレフィックスモッド": "Prefix Modifier",
+    "サフィックスモッド": "Suffix Modifier",
+    "「小」": "(Lesser)",
+    "ティア:": "Tier:",
+    "ランク:": "Rank:",
+    "ダメージ": "Damage",
+    "元素": "Elemental",
+    "冷気": "Cold",
+    "アタック": "Attack",
+    "ライフ": "Life",
+    "防御": "Defences",
+    "混沌": "Chaos",
+    "耐性": "Resistance",
+    "火": "Fire",
+    "「競技者の」": "\"Athlete's\"",
+    "「聖油の」": "\"Anointed\"",
+    "「修道僧の」": "\"Monk's\"",
+    "「バメスの」": "\"of Bameth\"",
+    "「悠久の」": "\"of Everlasting\"",
+    "「作成の」": "\"of Craft\""
+  },
+  "gemsAndSkills": {
+    "アイスショット": "Ice Shot",
+    "貫通": "Pierce",
+    "アタック元素ダメージ": "Elemental Damage with Attacks",
+    "グレーターハイポサーミア": "Greater Hypothermia",
+    "回帰": "Return",
+    "冷気耐性貫通": "Cold Penetration",
+    "ヴァールグレース": "Vaal Grace",
+    "ミラーアロー": "Mirror Arrow",
+    "アタックスピード増加": "Faster Attacks",
+    "ミニオンライフ": "Minion Life",
+    "ミニオンダメージ": "Minion Damage",
+    "ヴァールアイスショット": "Vaal Ice Shot",
+    "連鎖": "Chain",
+    "グレーターアタック元素ダメージ": "Greater Elemental Damage with Attacks",
+    "ハイポサーミア": "Hypothermia",
+    "ダッシュ": "Dash",
+    "ブリンクアロー": "Blink Arrow",
+    "クールダウン解消": "Cooldown Recovery"
+  },
+  "mods": [
+    {
+      "jp": "(\\d+)\\(([\\d\\-]+)\\)から(\\d+)\\(([\\d\\-]+)\\)の冷気ダメージをアタックに追加する",
+      "en": "Adds $1($2) to $3($4) Cold Damage to Attacks"
+    },
+    {
+      "jp": "スペルダメージ抑制確率 \\+(\\d+)%",
+      "en": "+$1% chance to Suppress Spell Damage"
+    },
+    {
+      "jp": "最大ライフ \\+(\\d+)\\(([\\d\\-]+)\\)",
+      "en": "+$1($2) to maximum Life"
+    },
+    {
+      "jp": "アーマー \\+(\\d+)\\(([\\d\\-]+)\\)",
+      "en": "+$1($2) to Armour"
+    },
+    {
+      "jp": "最大エナジーシールド \\+(\\d+)\\(([\\d\\-]+)\\)",
+      "en": "+$1($2) to maximum Energy Shield"
+    },
+    {
+      "jp": "混沌耐性 \\+(\\d+)\\(([\\d\\-]+)\\)%",
+      "en": "+$1($2)% to Chaos Resistance"
+    },
+    {
+      "jp": "ライフ自動回復レートが(\\d+)\\(([\\d\\-]+)\\)%増加する",
+      "en": "$1($2)% increased Life Regeneration rate"
+    },
+    {
+      "jp": "火および冷気耐性 \\+(\\d+)\\(([\\d\\-]+)\\)%",
+      "en": "+$1($2)% to Fire and Cold Resistances"
+    },
+    {
+      "jp": "シアリング・エグザークのアイテム",
+      "en": "Searing Exarch Item"
+    },
+    {
+      "jp": "イーター・オブ・ワールズのアイテム",
+      "en": "Eater of Worlds Item"
+    },
+    {
+      "jp": "フラクチャーアイテム",
+      "en": "Fractured Item"
+    }
+  ]
+}
