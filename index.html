@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PoE Item JP to EN Converter</title>
+  <style>
+    body { font-family: sans-serif; max-width: 900px; margin: 20px auto; padding: 0 20px; background: #1a1a1a; color: #e0e0e0; }
+    h1 { color: #af9456; text-align: center; }
+    .container { display: flex; gap: 20px; flex-wrap: wrap; }
+    .box { flex: 1; min-width: 300px; display: flex; flex-direction: column; }
+    textarea { height: 350px; background: #2a2a2a; color: #fff; border: 1px solid #444; padding: 10px; font-family: monospace; font-size: 13px; resize: vertical; }
+    button { margin: 15px 0; padding: 12px; font-size: 16px; background: #af9456; color: #000; font-weight: bold; border: none; cursor: pointer; border-radius: 4px; }
+    button:hover { background: #cbb274; }
+  </style>
+</head>
+<body>
+
+  <h1>PoE 日本語 ➔ 英語 アイテム変換器 (PoB用)</h1>
+  <p>ゲーム内で Ctrl + C した日本語アイテム情報を左に貼り付け、「変換」を押してください。</p>
+
+  <div class="container">
+    <div class="box">
+      <label for="input">日本語データ (Ctrl+V)</label>
+      <textarea id="input" placeholder="レアリティ: レア..."></textarea>
+    </div>
+
+    <div class="box">
+      <label for="output">英語データ (PoBインポート用)</label>
+      <textarea id="output" readonly placeholder="Rarity: RARE..."></textarea>
+    </div>
+  </div>
+
+  <button onclick="convertItem()">英語に変換する</button>
+
+  <script>
+    const dictionary = [
+      // レアリティ
+      { jp: /レアリティ:\ Normal/g, en: "Rarity: NORMAL" },
+      { jp: /レアリティ:\ Magic/g, en: "Rarity: MAGIC" },
+      { jp: /レアリティ:\ Rare/g, en: "Rarity: RARE" },
+      { jp: /レアリティ:\ Unique/g, en: "Rarity: UNIQUE" },
+      { jp: /レアリティ:\ ノーマル/g, en: "Rarity: NORMAL" },
+      { jp: /レアリティ:\ マジック/g, en: "Rarity: MAGIC" },
+      { jp: /レアリティ:\ レア/g, en: "Rarity: RARE" },
+      { jp: /レアリティ:\ ユニーク/g, en: "Rarity: UNIQUE" },
+
+      // ステータス
+      { jp: /クオリティ:/g, en: "Quality:" },
+      { jp: /物理ダメージ:/g, en: "Physical Damage:" },
+      { jp: /元素ダメージ:/g, en: "Elemental Damage:" },
+      { jp: /クリティカル率:/g, en: "Critical Strike Chance:" },
+      { jp: /秒間攻撃回数:/g, en: "Attacks per Second:" },
+      { jp: /アーマー:/g, en: "Armor:" },
+      { jp: /回避値:/g, en: "Evasion Rating:" },
+      { jp: /エナジーシールド:/g, en: "Energy Shield:" },
+      { jp: /要求レベル:/g, en: "Requires Level" },
+      { jp: /筋力/g, en: "Str" },
+      { jp: /器用さ/g, en: "Dex" },
+      { jp: /知性/g, en: "Int" },
+      { jp: /ソケット:/g, en: "Sockets:" },
+      { jp: /アイテムレベル:/g, en: "Item Level:" },
+
+      // 代表的なモッド
+      { jp: /最大生命\+(\d+)/g, en: "+$1 to maximum Life" },
+      { jp: /最大マナ\+(\d+)/g, en: "+$1 to maximum Mana" },
+      { jp: /最大エナジーシールド\+(\d+)/g, en: "+$1 to maximum Energy Shield" },
+      { jp: /火耐性\+(\d+)%/g, en: "+$1% to Fire Resistance" },
+      { jp: /冷気耐性\+(\d+)%/g, en: "+$1% to Cold Resistance" },
+      { jp: /稲妻耐性\+(\d+)%/g, en: "+$1% to Lightning Resistance" },
+      { jp: /混沌耐性\+(\d+)%/g, en: "+$1% to Chaos Resistance" },
+      { jp: /すべての元素耐性\+(\d+)%/g, en: "+$1% to all Elemental Resistances" },
+      { jp: /移動速度 \+(\d+)%/g, en: "$1% increased Movement Speed" }
+    ];
+
+    function convertItem() {
+      let text = document.getElementById("input").value;
+      dictionary.forEach(rule => {
+        text = text.replace(rule.jp, rule.en);
+      });
+      document.getElementById("output").value = text;
+    }
+  </script>
+
+</body>
+</html>
