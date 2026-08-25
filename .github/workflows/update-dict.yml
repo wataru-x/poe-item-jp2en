@@ -2,30 +2,30 @@ name: Update PoE Dictionary
 
 on:
   schedule:
-    - cron: '0 0 * * 0' # 毎週日曜日に自動実行
-  workflow_dispatch: # ボタン一つで手動実行できるスイッチ
+    - cron: '0 0 * * 0' # 毎週日曜日に全自動実行
+  workflow_dispatch: # Actions画面から手動実行できるボタン
 
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # リポジトリへの書き込み権限
+      contents: write
 
     steps:
       - name: リポジトリの読み込み
         uses: actions/checkout@v4
 
-      - name: Node.jsの準備
+      - name: Node.js のセットアップ
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: 辞書の生成実行
+      - name: 統合辞書の自動生成実行 (API + PoEDB/RePoE)
         run: node generate_dict.js
 
-      - name: 結果を保存して自動コミット
+      - name: 生成結果を保存して自動コミット
         run: |
           git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.email "github-actions[bot]"
           git add dictionary.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update dictionary from PoE API" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update dictionary (API + RePoE/PoEDB)" && git push)
