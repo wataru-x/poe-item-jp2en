@@ -1,7 +1,6 @@
 // generate_dict.js
 const fs = require('fs');
 
-// 公式 Trade API からデータ取得
 async function fetchTradeData(endpoint, lang) {
   const domain = lang === 'jp' ? 'jp.pathofexile.com' : 'www.pathofexile.com';
   const response = await fetch(`https://${domain}/api/trade/data/${endpoint}`, {
@@ -12,7 +11,6 @@ async function fetchTradeData(endpoint, lang) {
   return data.result;
 }
 
-// GitHub / RePoE / PoEDB コミュニティデータセットから取得
 async function fetchJson(url) {
   const response = await fetch(url);
   if (!response.ok) throw new Error(`Fetch Error [${url}]: ${response.status}`);
@@ -30,36 +28,32 @@ async function generateDictionary() {
       fetchTradeData('items', 'jp')
     ]);
   } catch (e) {
-    console.warn('Trade API 取得失敗 (スキップして代替データを使用):', e.message);
+    console.warn('Trade API 取得失敗:', e.message);
   }
 
-  console.log('--- 2/3: PoEDB / RePoE コミュニティデータセットからデータ取得中 ---');
+  console.log('--- 2/3: RePoE データセット取得中 ---');
   let repoeUniques = {};
   try {
-    // RePoE の全ユニークデータベース (日・英の全ユニークモッド・名前を網羅)
     repoeUniques = await fetchJson('https://raw.githubusercontent.com/brather1ng/RePoE/master/RePoE/data/uniques.json');
   } catch (e) {
-    console.warn('RePoE データ取得スキップ:', e.message);
+    console.warn('RePoE 取得失敗:', e.message);
+  }
+
+  // 手動オーバーライドファイルの読み込み
+  let overrides = { header: { itemClasses: {}, rarities: {} }, stats: {}, metaTerms: {}, itemStates: {} };
+  if (fs.existsSync('./overrides.json')) {
+    try {
+      overrides = JSON.parse(fs.readFileSync('./overrides.json', 'utf8'));
+      console.log('overrides.json を読み込みました');
+    } catch (e) {
+      console.warn('overrides.json の読み込み失敗:', e.message);
+    }
   }
 
   const dict = {
     header: {
-      itemClasses: {
-        "盾": "Shields",
-        "手袋": "Gloves",
-        "胸防具": "Body Armours",
-        "兜": "Helmets",
-        "靴": "Boots",
-        "指輪": "Rings",
-        "アミュレット": "Amulets",
-        "ベルト": "Belts"
-      },
-      rarities: {
-        "ノーマル": "Normal",
-        "マジック": "Magic",
-        "レア": "Rare",
-        "ユニーク": "Unique"
-      },
+      itemClasses: { ...overrides.header?.itemClasses },
+      rarities: { ...overrides.header?.rarities },
       names: {}
     },
     stats: {
@@ -67,7 +61,6 @@ async function generateDictionary() {
       "ブロック率:": "Chance to Block:",
       "アーマー:": "Armour:",
       "回避値:": "Evasion Rating:",
-      "回避力:": "Evasion Rating:", // 表記ブレ補正
       "エナジーシールド:": "Energy Shield:",
       "ワード:": "Ward:",
       "装備要求:": "Requirements:",
@@ -76,34 +69,15 @@ async function generateDictionary() {
       "器用さ:": "Dex:",
       "知性:": "Int:",
       "ソケット:": "Sockets:",
-      "アイテムレベル:": "Item Level:"
+      "アイテムレベル:": "Item Level:",
+      ...overrides.stats
     },
-    metaTerms: {
-      "痕跡": "Foil",
-      "暗黙モッド": "Implicit Modifier",
-      "ユニークモッド": "Unique Modifier",
-      "プレフィックスモッド": "Prefix Modifier",
-      "サフィックスモッド": "Suffix Modifier",
-      "フラクチャー": "Fractured",
-      "マスタークラフト": "Master Crafted",
-      "キャスター": "Caster",
-      "ジェム": "Gem",
-      "ライフ": "Life",
-      "防御": "Defences",
-      "冷気": "Cold",
-      "火": "Fire",
-      "雷": "Lightning",
-      "混沌": "Chaos",
-      "物理": "Physical",
-      "アタック": "Attack",
-      "スピード": "Speed",
-      "ダメージ": "Damage"
-    },
+    metaTerms: { ...overrides.metaTerms },
+    itemStates: { ...overrides.itemStates },
     mods: []
   };
 
-  // --- A. アイテム名の正確な統合 ---
-  // 1. 公式 API からアイテム名を取得
+  // 1. アイテム名・ベース名マッピング
   enItems.forEach((cat, cIdx) => {
     const jCat = jpItems[cIdx];
     if (!jCat || !jCat.entries) return;
@@ -121,9 +95,8 @@ async function generateDictionary() {
     });
   });
 
-  // 2. RePoE / PoEDB からユニークアイテム名と固有モッドを補完
+  // RePoE から補完
   const seenModJp = new Set();
-
   for (const [key, item] of Object.entries(repoeUniques)) {
     if (item.name && item.name_translated && item.name_translated.ja) {
       dict.header.names[item.name_translated.ja.trim()] = item.name.trim();
@@ -132,7 +105,6 @@ async function generateDictionary() {
       dict.header.names[item.base_item_translated.ja.trim()] = item.base_item.trim();
     }
 
-    // ユニークの固有テキスト効果（「他のものにより倒された敵のキルは...」など）を自動抽出
     if (item.mods) {
       item.mods.forEach(mod => {
         if (mod.text && mod.text_translated && mod.text_translated.ja) {
@@ -141,7 +113,6 @@ async function generateDictionary() {
 
           if (!seenModJp.has(jpText)) {
             seenModJp.add(jpText);
-            
             let escapedJp = jpText.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
             let jpRegex = escapedJp.replace(/#/g, "([+\\-\\d\\.]+)(?:\\([\\d\\.\\-]+\\))?");
 
@@ -151,18 +122,14 @@ async function generateDictionary() {
               enTemplate = enTemplate.replace('#', `$${groupCount++}`);
             }
 
-            dict.mods.push({
-              id: `repoe_${key}`,
-              jp: `^${jpRegex}$`,
-              en: enTemplate
-            });
+            dict.mods.push({ id: `repoe_${key}`, jp: `^${jpRegex}$`, en: enTemplate });
           }
         }
       });
     }
   }
 
-  // --- B. 公式 API の標準モッドを統合 ---
+  // 公式 API モッドマッピング
   const enModMap = new Map();
   enStats.forEach(cat => {
     if (cat.entries) {
@@ -191,18 +158,14 @@ async function generateDictionary() {
           enTemplate = enTemplate.replace('#', `$${groupCount++}`);
         }
 
-        dict.mods.push({
-          id: jpEntry.id,
-          jp: `^${jpRegex}$`,
-          en: enTemplate
-        });
+        dict.mods.push({ id: jpEntry.id, jp: `^${jpRegex}$`, en: enTemplate });
       });
     }
   });
 
   console.log('--- 3/3: dictionary.json へ書き出し中 ---');
   fs.writeFileSync('./dictionary.json', JSON.stringify(dict, null, 2), 'utf8');
-  console.log(`生成完了! アイテム名/ベース名: ${Object.keys(dict.header.names).length} 件, モッド: ${dict.mods.length} 件収録`);
+  console.log(`生成完了!`);
 }
 
 generateDictionary();
