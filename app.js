@@ -79,7 +79,7 @@ function parseLine(line) {
   let trimmed = line.trim();
   if (!trimmed) return null;
 
-  // 1. メタ用語（ティア/ランク）を含まない純粋な単行カッコ解説（詳細解説文章など）を除外
+  // 1. メタ用語を含まない解説用カッコ行の削除
   if (trimmed.startsWith("(") && trimmed.endsWith(")")) {
     const isMetaBracket = Object.keys(dictionary.metaTerms || {}).some(term => trimmed.includes(term));
     const isStatusTag = trimmed.includes("augmented") || trimmed.includes("unmet");
@@ -88,12 +88,12 @@ function parseLine(line) {
     }
   }
 
-  // 2. メタヘッダー { ... } のパース
+  // 2. メタヘッダー { ... }
   if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
     return parseMetaHeader(trimmed);
   }
 
-  // 3. アイテム状態 (アイテム属性フラグ)
+  // 3. アイテム状態
   if (dictionary.itemStates?.[trimmed]) {
     return dictionary.itemStates[trimmed];
   }
@@ -101,14 +101,14 @@ function parseLine(line) {
   // 4. (augmented) 等のステータスタグ除去
   let cleanLine = trimmed.replace(/\s*\((augmented|unmet)\)/gi, "");
 
-  // 5. ステータス項目 (アーマー: 148 等)
+  // 5. ステータス項目
   for (const [jpKey, enKey] of Object.entries(dictionary.stats)) {
     if (cleanLine.startsWith(jpKey)) {
       return cleanLine.replace(jpKey, enKey);
     }
   }
 
-  // 6. モッド本文の照合
+  // 6. モッド本文
   return translateModLine(cleanLine);
 }
 
@@ -116,7 +116,7 @@ function translateModLine(line) {
   let mainText = line;
   let appendedSuffix = "";
 
-  // 末尾サフィックス（解説等）の分離
+  // 末尾サフィックスの分離
   for (const [jpSuff, enSuff] of Object.entries(dictionary.suffixCleaners || {})) {
     if (mainText.endsWith(jpSuff)) {
       mainText = mainText.slice(0, -jpSuff.length).trim();
@@ -125,14 +125,17 @@ function translateModLine(line) {
     }
   }
 
-  // 可変値の数値範囲表記 (例: 129(115-129) または 6(6-7)から13(11-13)) の抽象化
+  // 可変値表記の正規化
+  // 例1: +129(115-129) -> +129
+  // 例2: 6(6-7)から13(11-13)の冷気... -> 6 to 13の冷気...
   let normalizedText = mainText
+    .replace(/(\d+)\([\d\.-]+\)から(\d+)\([\d\.-]+\)/g, "$1 to $2")
     .replace(/(\d+)\([\d\.-]+\)/g, "$1")
-    .replace(/(\d+)\s*[^\d\s\+\-\.]+\s*(\d+)/g, "$1 to $2");
+    .replace(/(\d+)\s*から\s*(\d+)/g, "$1 to $2");
 
   let translatedMod = normalizedText;
 
-  // モッド辞書ルールの照合
+  // モッド辞書照合
   for (const rule of dictionary.mods) {
     try {
       const reg = new RegExp(rule.jp, 'i');
@@ -149,19 +152,19 @@ function translateModLine(line) {
 function parseMetaHeader(headerStr) {
   let inner = headerStr.slice(1, -1).trim();
 
-  // 記号・引用符の正規化
+  // 記号・引用符・スペース構成の正規化
   inner = inner.replace(/「/g, '"').replace(/」/g, '"');
-  inner = inner.replace(/Modifier"/g, 'Modifier "');
+  inner = inner.replace(/([a-zA-Z])"/g, '$1 "');
+  inner = inner.replace(/"([a-zA-Z])/g, '" $1');
 
-  // 辞書に定義されたすべてのメタ用語を単語長（降順）で安全に置換
+  // メタ用語の長順置換
   const sortedMetaTerms = Object.entries(dictionary.metaTerms || {})
     .sort((a, b) => b[0].length - a[0].length);
 
   for (const [jp, en] of sortedMetaTerms) {
     if (inner.includes(jp)) {
-      // (ティア: 1) や (ランク: 1) などの記号つき表記を考慮した置換
-      const reg = new RegExp(`${jp}:\\s*`, 'g');
-      inner = inner.replace(reg, `${en}: `);
+      const regKey = new RegExp(`${jp}:\\s*`, 'g');
+      inner = inner.replace(regKey, `${en}: `);
       inner = inner.replaceAll(jp, en);
     }
   }
