@@ -18,7 +18,20 @@
     }
   },
   "stats": {
-    "回避力:": "Evasion Rating:"
+    "品質:": "Quality:",
+    "ブロック率:": "Chance to Block:",
+    "アーマー:": "Armour:",
+    "回避値:": "Evasion Rating:",
+    "回避力:": "Evasion Rating:",
+    "エナジーシールド:": "Energy Shield:",
+    "ワード:": "Ward:",
+    "装備要求:": "Requirements:",
+    "レベル:": "Level:",
+    "筋力:": "Str:",
+    "器用さ:": "Dex:",
+    "知性:": "Int:",
+    "ソケット:": "Sockets:",
+    "アイテムレベル:": "Item Level:"
   },
   "metaTerms": {
     "痕跡": "Foil",
