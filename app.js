@@ -4,6 +4,7 @@ let dictionary = {
   metaTerms: {},
   itemStates: {},
   suffixCleaners: {},
+  specialRules: [],
   mods: []
 };
 
@@ -57,14 +58,22 @@ function parseHeaderBlock(lines) {
   return lines.map(line => {
     let trimmed = line.trim();
 
+    for (const [jpKey, enKey] of Object.entries(dictionary.header.itemClasses || {})) {
+      if (trimmed.startsWith(`アイテムクラス: ${jpKey}`)) {
+        return `Item Class: ${enKey}`;
+      }
+    }
     if (trimmed.startsWith("アイテムクラス:")) {
-      const cls = trimmed.replace("アイテムクラス:", "").trim();
-      return `Item Class: ${dictionary.header.itemClasses?.[cls] || cls}`;
+      return `Item Class: ${trimmed.replace("アイテムクラス:", "").trim()}`;
     }
 
+    for (const [jpKey, enKey] of Object.entries(dictionary.header.rarities || {})) {
+      if (trimmed.startsWith(`レアリティ: ${jpKey}`)) {
+        return `Rarity: ${enKey}`;
+      }
+    }
     if (trimmed.startsWith("レアリティ:")) {
-      const r = trimmed.replace("レアリティ:", "").trim();
-      return `Rarity: ${dictionary.header.rarities?.[r] || r}`;
+      return `Rarity: ${trimmed.replace("レアリティ:", "").trim()}`;
     }
 
     if (dictionary.header.names?.[trimmed]) {
@@ -79,7 +88,7 @@ function parseLine(line) {
   let trimmed = line.trim();
   if (!trimmed) return null;
 
-  // 1. メタ用語を含まない解説用カッコ行の削除
+  // 1. メタ用語を含まない解説カッコ行の削除
   if (trimmed.startsWith("(") && trimmed.endsWith(")")) {
     const isMetaBracket = Object.keys(dictionary.metaTerms || {}).some(term => trimmed.includes(term));
     const isStatusTag = trimmed.includes("augmented") || trimmed.includes("unmet");
@@ -125,9 +134,7 @@ function translateModLine(line) {
     }
   }
 
-  // 可変値表記の正規化
-  // 例1: +129(115-129) -> +129
-  // 例2: 6(6-7)から13(11-13)の冷気... -> 6 to 13の冷気...
+  // 可変値表記の数値範囲正規化（共通フォーマット処理）
   let normalizedText = mainText
     .replace(/(\d+)\([\d\.-]+\)から(\d+)\([\d\.-]+\)/g, "$1 to $2")
     .replace(/(\d+)\([\d\.-]+\)/g, "$1")
@@ -135,8 +142,8 @@ function translateModLine(line) {
 
   let translatedMod = normalizedText;
 
-  // モッド辞書照合
-  for (const rule of dictionary.mods) {
+  // 1. 標準モッド辞書との照合
+  for (const rule of dictionary.mods || []) {
     try {
       const reg = new RegExp(rule.jp, 'i');
       if (reg.test(normalizedText)) {
@@ -146,16 +153,27 @@ function translateModLine(line) {
     } catch (e) {}
   }
 
+  // 2. 辞書側の特殊ルールの照合 (overrides.json の specialRules を使用)
+  if (translatedMod === normalizedText && dictionary.specialRules) {
+    for (const rule of dictionary.specialRules) {
+      try {
+        const reg = new RegExp(rule.jp, 'i');
+        if (reg.test(normalizedText)) {
+          translatedMod = normalizedText.replace(reg, rule.en);
+          break;
+        }
+      } catch (e) {}
+    }
+  }
+
   return translatedMod + (appendedSuffix ? " " + appendedSuffix : "");
 }
 
 function parseMetaHeader(headerStr) {
   let inner = headerStr.slice(1, -1).trim();
 
-  // 記号・引用符・スペース構成の正規化
+  // 記号・引用符の正規化
   inner = inner.replace(/「/g, '"').replace(/」/g, '"');
-  inner = inner.replace(/([a-zA-Z])"/g, '$1 "');
-  inner = inner.replace(/"([a-zA-Z])/g, '" $1');
 
   // メタ用語の長順置換
   const sortedMetaTerms = Object.entries(dictionary.metaTerms || {})
@@ -169,6 +187,9 @@ function parseMetaHeader(headerStr) {
     }
   }
 
+  // スペース整形
+  inner = inner.replace(/([a-zA-Z])"/g, '$1 "');
+  inner = inner.replace(/"([a-zA-Z])/g, '" $1');
   inner = inner.replace(/\s+/g, ' ').trim();
 
   return `{ ${inner} }`;
