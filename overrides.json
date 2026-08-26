@@ -56,11 +56,14 @@
     "ジェム": "Gem",
     "キャスター": "Caster",
     "マスタークラフト": "Master Crafted",
+    "マスタークラフトプレフィックスモッド": "Master Crafted Prefix Modifier",
+    "マスタークラフトサフィックスモッド": "Master Crafted Suffix Modifier",
+    "プレフィックスモッド": "Prefix Modifier",
+    "サフィックスモッド": "Suffix Modifier",
     "フラクチャー": "Fractured",
     "暗黙モッド": "Implicit Modifier",
     "ユニークモッド": "Unique Modifier",
-    "プレフィックスモッド": "Prefix Modifier",
-    "サフィックスモッド": "Suffix Modifier"
+    "ティア": "Tier"
   },
   "itemStates": {
     "ミラー状態": "Mirrored",
@@ -71,5 +74,8 @@
     "ウォーロードアイテム": "Warlord Item",
     "レデンプターアイテム": "Redeemer Item",
     "クルセイダーアイテム": "Crusader Item"
+  },
+  "suffixCleaners": {
+    " — スケールできない値": " — Cannot be Scaled"
   }
 }
