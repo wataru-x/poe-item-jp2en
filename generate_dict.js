@@ -1,4 +1,3 @@
-// generate_dict.js
 const fs = require('fs');
 
 async function fetchTradeData(endpoint, lang) {
@@ -39,7 +38,7 @@ async function generateDictionary() {
     console.warn('RePoE 取得失敗:', e.message);
   }
 
-  // 手動オーバーライドファイルの読み込み
+  // overrides.json の読み込み（存在しない場合は空オブジェクト）
   let overrides = { header: { itemClasses: {}, rarities: {} }, stats: {}, metaTerms: {}, itemStates: {} };
   if (fs.existsSync('./overrides.json')) {
     try {
@@ -56,28 +55,13 @@ async function generateDictionary() {
       rarities: { ...overrides.header?.rarities },
       names: {}
     },
-    stats: {
-      "品質:": "Quality:",
-      "ブロック率:": "Chance to Block:",
-      "アーマー:": "Armour:",
-      "回避値:": "Evasion Rating:",
-      "エナジーシールド:": "Energy Shield:",
-      "ワード:": "Ward:",
-      "装備要求:": "Requirements:",
-      "レベル:": "Level:",
-      "筋力:": "Str:",
-      "器用さ:": "Dex:",
-      "知性:": "Int:",
-      "ソケット:": "Sockets:",
-      "アイテムレベル:": "Item Level:",
-      ...overrides.stats
-    },
+    stats: { ...overrides.stats },
     metaTerms: { ...overrides.metaTerms },
     itemStates: { ...overrides.itemStates },
     mods: []
   };
 
-  // 1. アイテム名・ベース名マッピング
+  // アイテム名・ベース名マッピング
   enItems.forEach((cat, cIdx) => {
     const jCat = jpItems[cIdx];
     if (!jCat || !jCat.entries) return;
@@ -113,16 +97,7 @@ async function generateDictionary() {
 
           if (!seenModJp.has(jpText)) {
             seenModJp.add(jpText);
-            let escapedJp = jpText.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
-            let jpRegex = escapedJp.replace(/#/g, "([+\\-\\d\\.]+)(?:\\([\\d\\.\\-]+\\))?");
-
-            let groupCount = 1;
-            let enTemplate = enText;
-            while (enTemplate.includes('#')) {
-              enTemplate = enTemplate.replace('#', `$${groupCount++}`);
-            }
-
-            dict.mods.push({ id: `repoe_${key}`, jp: `^${jpRegex}$`, en: enTemplate });
+            addModRule(dict.mods, jpText, enText, `repoe_${key}`);
           }
         }
       });
@@ -149,23 +124,28 @@ async function generateDictionary() {
         if (seenModJp.has(jpText)) return;
         seenModJp.add(jpText);
 
-        let escapedJp = jpText.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
-        let jpRegex = escapedJp.replace(/#/g, "([+\\-\\d\\.]+)(?:\\([\\d\\.\\-]+\\))?");
-
-        let groupCount = 1;
-        let enTemplate = enText;
-        while (enTemplate.includes('#')) {
-          enTemplate = enTemplate.replace('#', `$${groupCount++}`);
-        }
-
-        dict.mods.push({ id: jpEntry.id, jp: `^${jpRegex}$`, en: enTemplate });
+        addModRule(dict.mods, jpText, enText, jpEntry.id);
       });
     }
   });
 
   console.log('--- 3/3: dictionary.json へ書き出し中 ---');
   fs.writeFileSync('./dictionary.json', JSON.stringify(dict, null, 2), 'utf8');
-  console.log(`生成完了!`);
+  console.log('生成完了!');
+}
+
+// モッドルール生成ロジックの共通化
+function addModRule(modsArray, jpText, enText, id) {
+  let escapedJp = jpText.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+  let jpRegex = escapedJp.replace(/#/g, "([+\\-\\d\\.]+)(?:\\([\\d\\.\\-]+\\))?");
+
+  let groupCount = 1;
+  let enTemplate = enText;
+  while (enTemplate.includes('#')) {
+    enTemplate = enTemplate.replace('#', `$${groupCount++}`);
+  }
+
+  modsArray.push({ id, jp: `^${jpRegex}$`, en: enTemplate });
 }
 
 generateDictionary();
