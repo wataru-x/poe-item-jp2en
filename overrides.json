@@ -1,0 +1,62 @@
+{
+  "header": {
+    "itemClasses": {
+      "手袋": "Gloves",
+      "盾": "Shields",
+      "胸防具": "Body Armours",
+      "兜": "Helmets",
+      "靴": "Boots",
+      "指輪": "Rings",
+      "アミュレット": "Amulets",
+      "ベルト": "Belts"
+    },
+    "rarities": {
+      "ノーマル": "Normal",
+      "マジック": "Magic",
+      "レア": "Rare",
+      "ユニーク": "Unique"
+    }
+  },
+  "stats": {
+    "回避力:": "Evasion Rating:"
+  },
+  "metaTerms": {
+    "痕跡": "Foil",
+    "コラプト": "Corrupted",
+    "エレベートエルダーによる": "Elevated Elder's",
+    "エレベートシェイパーによる": "Elevated Shaper's",
+    "エッセンスの": "of the Essence",
+    "選ばれし": "Chosen",
+    "上級": "Powerful",
+    "呪い": "Curse",
+    "クリティカル": "Critical",
+    "ダメージ": "Damage",
+    "スピード": "Speed",
+    "アタック": "Attack",
+    "物理": "Physical",
+    "混沌": "Chaos",
+    "雷": "Lightning",
+    "火": "Fire",
+    "冷気": "Cold",
+    "防御": "Defences",
+    "ライフ": "Life",
+    "ジェム": "Gem",
+    "キャスター": "Caster",
+    "マスタークラフト": "Master Crafted",
+    "フラクチャー": "Fractured",
+    "暗黙モッド": "Implicit Modifier",
+    "ユニークモッド": "Unique Modifier",
+    "プレフィックスモッド": "Prefix Modifier",
+    "サフィックスモッド": "Suffix Modifier"
+  },
+  "itemStates": {
+    "ミラー状態": "Mirrored",
+    "コラプト状態": "Corrupted",
+    "シェイパーアイテム": "Shaper Item",
+    "エルダーアイテム": "Elder Item",
+    "ハンターアイテム": "Hunter Item",
+    "ウォーロードアイテム": "Warlord Item",
+    "レデンプターアイテム": "Redeemer Item",
+    "クルセイダーアイテム": "Crusader Item"
+  }
+}
