@@ -9,7 +9,7 @@ async function loadDictionary() {
   try {
     const response = await fetch('./dictionary.json');
     dictionary = await response.json();
-    document.getElementById('status').innerText = '辞書データ読み込み完了 (統合データベース対応)';
+    document.getElementById('status').innerText = '辞書データ読み込み完了';
   } catch (error) {
     console.error('辞書読み込み失敗:', error);
   }
@@ -25,6 +25,7 @@ function convertItem() {
     let lines = block.trim().split("\n");
     if (lines.length === 0 || (lines.length === 1 && lines[0] === "")) return "";
 
+    // 第1ブロック：ヘッダー
     if (index === 0) {
       return parseHeaderBlock(lines);
     }
@@ -36,8 +37,19 @@ function convertItem() {
   document.getElementById("output").value = convertedBlocks.filter(b => b.trim() !== "").join("\n--------\n");
 }
 
+// ヘッダーブロックのパース処理
 function parseHeaderBlock(lines) {
-  return lines.map(line => {
+  let rarity = "Rare"; // デフォルト
+
+  // レアリティの判定
+  lines.forEach(line => {
+    if (line.startsWith("レアリティ:")) {
+      const r = line.replace("レアリティ:", "").trim();
+      rarity = dictionary.header.rarities?.[r] || r;
+    }
+  });
+
+  return lines.map((line, idx) => {
     let trimmed = line.trim();
 
     if (trimmed.startsWith("アイテムクラス:")) {
@@ -45,23 +57,17 @@ function parseHeaderBlock(lines) {
       return `Item Class: ${dictionary.header.itemClasses?.[cls] || cls}`;
     }
     if (trimmed.startsWith("レアリティ:")) {
-      const rarity = trimmed.replace("レアリティ:", "").trim();
-      return `Rarity: ${dictionary.header.rarities?.[rarity] || rarity}`;
+      return `Rarity: ${rarity}`;
     }
 
-    // 1. 完全一致名参照
+    // レアアイテムの場合、ランダム生成の1行目（例: 高潔な爪）はそのまま出力し、ベースアイテム名のみ辞書置換
+    if (rarity === "Rare" && idx === 2 && lines.length >= 4) {
+      return trimmed; // レアアイテム名は変換せず保持（PoBはベース名を重視するため）
+    }
+
+    // 辞書によるアイテム名・ベース名置換
     if (dictionary.header.names?.[trimmed]) {
       return dictionary.header.names[trimmed];
-    }
-
-    // 2. 「痕跡 xxx」のような特殊プレフィックス付きベース名の分解参照
-    for (const [jpPrefix, enPrefix] of Object.entries(dictionary.metaTerms)) {
-      if (trimmed.startsWith(jpPrefix + " ")) {
-        const baseName = trimmed.replace(jpPrefix + " ", "").trim();
-        if (dictionary.header.names?.[baseName]) {
-          return `${enPrefix} ${dictionary.header.names[baseName]}`;
-        }
-      }
     }
 
     return trimmed;
@@ -72,22 +78,33 @@ function parseLine(line) {
   let trimmed = line.trim();
   if (!trimmed) return null;
 
-  // 1. メタヘッダー { ... } の変換
+  // 1. カッコ内の注釈テキスト（PoB非対応の解説文）を除外
+  if (trimmed.startsWith("(") && trimmed.endsWith(")")) {
+    return null;
+  }
+
+  // 2. メタヘッダー { ... } の全単語パース
   if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
     return parseMetaHeader(trimmed);
   }
 
-  // 2. 注釈・補足の除外/クリーン化
+  // 3. アイテム状態・属性表記の英文変換（最下部テキストなど）
+  const stateTranslate = translateItemStates(trimmed);
+  if (stateTranslate !== trimmed) {
+    return stateTranslate;
+  }
+
+  // 4. (augmented) などのノイズ除去
   let cleanLine = trimmed.replace(/\s*\((augmented|unmet)\)/gi, "");
 
-  // 3. ステータス項目の置換
+  // 5. ステータス項目の置換
   for (const [jpKey, enKey] of Object.entries(dictionary.stats)) {
     if (cleanLine.startsWith(jpKey)) {
       return cleanLine.replace(jpKey, enKey);
     }
   }
 
-  // 4. モッド辞書（API + PoEDB/RePoE統合データ）の照合
+  // 6. モッド辞書（正規表現）照合
   for (const rule of dictionary.mods) {
     try {
       const reg = new RegExp(rule.jp, 'i');
@@ -100,14 +117,34 @@ function parseLine(line) {
   return trimmed;
 }
 
+// メタヘッダー { ... } 内の構造化パース（プレフィックス名や属性タグを自動翻訳）
 function parseMetaHeader(headerStr) {
   let inner = headerStr.slice(1, -1).trim();
 
+  // 辞書に含まれるメタ単語をすべて置換
   for (const [jp, en] of Object.entries(dictionary.metaTerms)) {
     inner = inner.replaceAll(jp, en);
   }
 
   return `{ ${inner} }`;
+}
+
+// アイテムの属性・状態テキストの対応表
+function translateItemStates(text) {
+  const states = {
+    "ミラー状態": "Mirrored",
+    "コラプト状態": "Corrupted",
+    "シェイパーアイテム": "Shaper Item",
+    "エルダーアイテム": "Elder Item",
+    "ハンターアイテム": "Hunter Item",
+    "ウォーロードアイテム": "Warlord Item",
+    "レデンプターアイテム": "Redeemer Item",
+    "クルセイダーアイテム": "Crusader Item",
+    "ヴェイルドプレフィックス": "Veiled Prefix",
+    "ヴェイルドサフィックス": "Veiled Suffix"
+  };
+
+  return states[text] || text;
 }
 
 loadDictionary();
