@@ -8,17 +8,32 @@ let dictionary = {
 };
 
 async function loadDictionary() {
+  const statusEl = document.getElementById('status');
   try {
     const response = await fetch('./dictionary.json');
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
     dictionary = await response.json();
-    document.getElementById('status').innerText = '辞書データ読み込み完了';
+    if (statusEl) {
+      statusEl.style.display = 'none';
+    }
+    console.log('✅ 辞書データの読み込み完了');
   } catch (error) {
-    console.error('辞書読み込み失敗:', error);
+    console.error('❌ 辞書の読み込み失敗:', error);
+    if (statusEl) {
+      statusEl.textContent = `❌ 辞書データの読み込みエラー: ${error.message}`;
+      statusEl.style.color = 'red';
+    }
   }
 }
 
 function convertItem() {
-  const rawText = document.getElementById("input").value.replace(/\r\n/g, "\n");
+  const inputEl = document.getElementById("input");
+  const outputEl = document.getElementById("output");
+  if (!inputEl || !outputEl) return;
+
+  const rawText = inputEl.value.replace(/\r\n/g, "\n");
   if (!rawText.trim()) return;
 
   const blocks = rawText.split(/^--------$/m);
@@ -35,7 +50,7 @@ function convertItem() {
     return parsedLines.join("\n");
   });
 
-  document.getElementById("output").value = convertedBlocks.filter(b => b.trim() !== "").join("\n--------\n");
+  outputEl.value = convertedBlocks.filter(b => b.trim() !== "").join("\n--------\n");
 }
 
 function parseHeaderBlock(lines) {
@@ -64,7 +79,7 @@ function parseLine(line) {
   let trimmed = line.trim();
   if (!trimmed) return null;
 
-  // 1. カッコ括りの完全解説文（例: パニッシュメントの詳細解説）を除外
+  // 1. カッコ括りの解説文を除外
   if (trimmed.startsWith("(") && trimmed.endsWith(")")) {
     return null;
   }
@@ -74,7 +89,7 @@ function parseLine(line) {
     return parseMetaHeader(trimmed);
   }
 
-  // 3. アイテム属性状態 (Mirrored, Corrupted, Shaper Item等)
+  // 3. アイテム属性状態 (Mirrored, Corrupted等)
   if (dictionary.itemStates?.[trimmed]) {
     return dictionary.itemStates[trimmed];
   }
@@ -89,16 +104,15 @@ function parseLine(line) {
     }
   }
 
-  // 6. モッド本文の照合（末尾サフィックスの分離と処理）
+  // 6. モッド本文の照合
   return translateModLine(cleanLine);
 }
 
-// モッドテキストの分離変換処理
 function translateModLine(line) {
   let mainText = line;
   let appendedSuffix = "";
 
-  // 末尾の「 — スケールできない値」などの特殊解説を一時分離
+  // 末尾の特殊解説（例: — スケールできない値）を分離
   for (const [jpSuff, enSuff] of Object.entries(dictionary.suffixCleaners || {})) {
     if (mainText.endsWith(jpSuff)) {
       mainText = mainText.slice(0, -jpSuff.length).trim();
@@ -107,47 +121,42 @@ function translateModLine(line) {
     }
   }
 
-  // モッド辞書（完全一致 / 正規表現）との照合
+  // モッド辞書との照合
   let translatedMod = mainText;
-  let matched = false;
 
   for (const rule of dictionary.mods) {
     try {
       const reg = new RegExp(rule.jp, 'i');
       if (reg.test(mainText)) {
         translatedMod = mainText.replace(reg, rule.en);
-        matched = true;
         break;
       }
     } catch (e) {}
   }
 
-  // 分離した末尾テキストを再結合
-  return translatedMod + appendedSuffix;
+  return translatedMod + (appendedSuffix ? " " + appendedSuffix : "");
 }
 
-// メタヘッダー { ... } 内の構造化パース（スペース保持と日本語括弧の除去）
 function parseMetaHeader(headerStr) {
   let inner = headerStr.slice(1, -1).trim();
 
-  // 日本語引用符の変換: 「...」 -> "..."
-  inner = inner.replace(/「/g, '"').replace/」/g, '"');
+  // 日本語引用符の変換 (修正済み)
+  inner = inner.replace(/「/g, '"').replace(/」/g, '"');
 
-  // 単語長順にソートして置換（長語優先で誤置換を防ぐ）
+  // 単語長順にソートして置換
   const sortedMetaTerms = Object.entries(dictionary.metaTerms || {})
     .sort((a, b) => b[0].length - a[0].length);
 
   for (const [jp, en] of sortedMetaTerms) {
     if (inner.includes(jp)) {
-      // スペースが消失しないよう、両脇に必要なスペースを保つ
-      inner = inner.replaceAll(jp, `${en}`);
+      inner = inner.replaceAll(jp, en);
     }
   }
 
-  // 二重スペースの整形
   inner = inner.replace(/\s+/g, ' ').trim();
 
   return `{ ${inner} }`;
 }
 
+// 読み込み実行
 loadDictionary();
