@@ -34,13 +34,24 @@
     "アイテムレベル:": "Item Level:"
   },
   "metaTerms": {
+    "暗黙モッド": "Implicit Modifier",
+    "プレフィックスモッド": "Prefix Modifier",
+    "サフィックスモッド": "Suffix Modifier",
+    "マスタークラフト": "Master Crafted",
+    "フラクチャー": "Fractured",
     "痕跡": "Foil",
     "コラプト": "Corrupted",
+    "シアリング・エグザーク": "Searing Exarch",
+    "イーター・オブ・ワールズ": "Eater of Worlds",
     "エレベートエルダーによる": "Elevated Elder's",
     "エレベートシェイパーによる": "Elevated Shaper's",
     "エッセンスの": "of the Essence",
     "選ばれし": "Chosen",
     "上級": "Powerful",
+    "小": "Lesser",
+    "中": "Greater",
+    "大": "Grand",
+    "極大": "Exceptional",
     "呪い": "Curse",
     "クリティカル": "Critical",
     "ダメージ": "Damage",
@@ -51,19 +62,16 @@
     "雷": "Lightning",
     "火": "Fire",
     "冷気": "Cold",
+    "元素": "Elemental",
     "防御": "Defences",
+    "アーマー": "Armour",
+    "エナジーシールド": "Energy Shield",
     "ライフ": "Life",
     "ジェム": "Gem",
     "キャスター": "Caster",
-    "マスタークラフト": "Master Crafted",
-    "マスタークラフトプレフィックスモッド": "Master Crafted Prefix Modifier",
-    "マスタークラフトサフィックスモッド": "Master Crafted Suffix Modifier",
-    "プレフィックスモッド": "Prefix Modifier",
-    "サフィックスモッド": "Suffix Modifier",
-    "フラクチャー": "Fractured",
-    "暗黙モッド": "Implicit Modifier",
-    "ユニークモッド": "Unique Modifier",
-    "ティア": "Tier"
+    "耐性": "Resistance",
+    "ティア": "Tier",
+    "ランク": "Rank"
   },
   "itemStates": {
     "ミラー状態": "Mirrored",
@@ -73,7 +81,10 @@
     "ハンターアイテム": "Hunter Item",
     "ウォーロードアイテム": "Warlord Item",
     "レデンプターアイテム": "Redeemer Item",
-    "クルセイダーアイテム": "Crusader Item"
+    "クルセイダーアイテム": "Crusader Item",
+    "シアリング・エグザークのアイテム": "Searing Exarch Item",
+    "イーター・オブ・ワールズのアイテム": "Eater of Worlds Item",
+    "フラクチャーアイテム": "Fractured Item"
   },
   "suffixCleaners": {
     " — スケールできない値": " — Cannot be Scaled"
