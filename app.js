@@ -2,6 +2,7 @@ let dictionary = {
   header: { itemClasses: {}, rarities: {}, names: {} },
   stats: {},
   metaTerms: {},
+  itemStates: {},
   mods: []
 };
 
@@ -25,7 +26,7 @@ function convertItem() {
     let lines = block.trim().split("\n");
     if (lines.length === 0 || (lines.length === 1 && lines[0] === "")) return "";
 
-    // 第1ブロック：ヘッダー
+    // 最初のブロック＝ヘッダーブロック
     if (index === 0) {
       return parseHeaderBlock(lines);
     }
@@ -37,39 +38,29 @@ function convertItem() {
   document.getElementById("output").value = convertedBlocks.filter(b => b.trim() !== "").join("\n--------\n");
 }
 
-// ヘッダーブロックのパース処理
+// ヘッダーの動的パース（マジックナンバーの排除）
 function parseHeaderBlock(lines) {
-  let rarity = "Rare"; // デフォルト
-
-  // レアリティの判定
-  lines.forEach(line => {
-    if (line.startsWith("レアリティ:")) {
-      const r = line.replace("レアリティ:", "").trim();
-      rarity = dictionary.header.rarities?.[r] || r;
-    }
-  });
-
-  return lines.map((line, idx) => {
+  return lines.map(line => {
     let trimmed = line.trim();
 
+    // 1. アイテムクラスの処理
     if (trimmed.startsWith("アイテムクラス:")) {
       const cls = trimmed.replace("アイテムクラス:", "").trim();
       return `Item Class: ${dictionary.header.itemClasses?.[cls] || cls}`;
     }
+
+    // 2. レアリティの処理
     if (trimmed.startsWith("レアリティ:")) {
-      return `Rarity: ${rarity}`;
+      const r = trimmed.replace("レアリティ:", "").trim();
+      return `Rarity: ${dictionary.header.rarities?.[r] || r}`;
     }
 
-    // レアアイテムの場合、ランダム生成の1行目（例: 高潔な爪）はそのまま出力し、ベースアイテム名のみ辞書置換
-    if (rarity === "Rare" && idx === 2 && lines.length >= 4) {
-      return trimmed; // レアアイテム名は変換せず保持（PoBはベース名を重視するため）
-    }
-
-    // 辞書によるアイテム名・ベース名置換
+    // 3. 辞書に完全一致するアイテム名/ベース名があれば置換
     if (dictionary.header.names?.[trimmed]) {
       return dictionary.header.names[trimmed];
     }
 
+    // 4. 辞書にない場合（レアアイテムのランダム名称など）はそのまま保持
     return trimmed;
   }).join("\n");
 }
@@ -78,26 +69,25 @@ function parseLine(line) {
   let trimmed = line.trim();
   if (!trimmed) return null;
 
-  // 1. カッコ内の注釈テキスト（PoB非対応の解説文）を除外
+  // 1. カッコ括りの解説文（ゲーム内注釈など）を除外
   if (trimmed.startsWith("(") && trimmed.endsWith(")")) {
     return null;
   }
 
-  // 2. メタヘッダー { ... } の全単語パース
+  // 2. メタヘッダー { ... } の構造パース
   if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
     return parseMetaHeader(trimmed);
   }
 
-  // 3. アイテム状態・属性表記の英文変換（最下部テキストなど）
-  const stateTranslate = translateItemStates(trimmed);
-  if (stateTranslate !== trimmed) {
-    return stateTranslate;
+  // 3. アイテム属性状態 (ミラー状態、シェイパーアイテム等) の辞書照合
+  if (dictionary.itemStates?.[trimmed]) {
+    return dictionary.itemStates[trimmed];
   }
 
-  // 4. (augmented) などのノイズ除去
+  // 4. (augmented) などの追加タグの削除
   let cleanLine = trimmed.replace(/\s*\((augmented|unmet)\)/gi, "");
 
-  // 5. ステータス項目の置換
+  // 5. ステータス項目（品質、要求レベル等）の置換
   for (const [jpKey, enKey] of Object.entries(dictionary.stats)) {
     if (cleanLine.startsWith(jpKey)) {
       return cleanLine.replace(jpKey, enKey);
@@ -117,34 +107,15 @@ function parseLine(line) {
   return trimmed;
 }
 
-// メタヘッダー { ... } 内の構造化パース（プレフィックス名や属性タグを自動翻訳）
 function parseMetaHeader(headerStr) {
   let inner = headerStr.slice(1, -1).trim();
 
-  // 辞書に含まれるメタ単語をすべて置換
+  // 単語境界を考慮せず純粋に全置換（複合名詞に対応）
   for (const [jp, en] of Object.entries(dictionary.metaTerms)) {
     inner = inner.replaceAll(jp, en);
   }
 
   return `{ ${inner} }`;
-}
-
-// アイテムの属性・状態テキストの対応表
-function translateItemStates(text) {
-  const states = {
-    "ミラー状態": "Mirrored",
-    "コラプト状態": "Corrupted",
-    "シェイパーアイテム": "Shaper Item",
-    "エルダーアイテム": "Elder Item",
-    "ハンターアイテム": "Hunter Item",
-    "ウォーロードアイテム": "Warlord Item",
-    "レデンプターアイテム": "Redeemer Item",
-    "クルセイダーアイテム": "Crusader Item",
-    "ヴェイルドプレフィックス": "Veiled Prefix",
-    "ヴェイルドサフィックス": "Veiled Suffix"
-  };
-
-  return states[text] || text;
 }
 
 loadDictionary();
