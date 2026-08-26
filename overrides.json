@@ -34,6 +34,8 @@
     "アイテムレベル:": "Item Level:"
   },
   "metaTerms": {
+    "痕跡暗黙モッド": "Foil Implicit Modifier",
+    "コラプト暗黙モッド": "Corrupted Implicit Modifier",
     "暗黙モッド": "Implicit Modifier",
     "プレフィックスモッド": "Prefix Modifier",
     "サフィックスモッド": "Suffix Modifier",
@@ -88,5 +90,27 @@
   },
   "suffixCleaners": {
     " — スケールできない値": " — Cannot be Scaled"
-  }
+  },
+  "specialRules": [
+    {
+      "jp": "^コラプト状態でも改変可能$",
+      "en": "Can be modified while Corrupted"
+    },
+    {
+      "jp": "^ヒット時に敵を(.+)で呪う$",
+      "en": "Curse Enemies with $1 on Hit"
+    },
+    {
+      "jp": "^ソケットされたジェムはレベル(\\d+)(.+)によりサポートされる$",
+      "en": "Socketed Gems are Supported by Level $1 $2"
+    },
+    {
+      "jp": "^ソケットされたジェムのクリティカル率 \\+([\\d\\.]+)%$",
+      "en": "+$1% Critical Strike Chance for Socketed Gems"
+    },
+    {
+      "jp": "^ソケットされたスペルのクリティカルダメージ倍率 \\+([\\d\\.]+)%$",
+      "en": "+$1% to Critical Strike Multiplier for Socketed Spells"
+    }
+  ]
 }
