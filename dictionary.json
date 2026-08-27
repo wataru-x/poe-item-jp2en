@@ -17,6 +17,7 @@
       "ユニーク": "Unique"
     }
   },
+  "baseItems": {},
   "stats": {
     "品質:": "Quality:",
     "アーマー:": "Armour:",
@@ -32,42 +33,6 @@
     "知性:": "Int:",
     "ソケット:": "Sockets:",
     "アイテムレベル:": "Item Level:"
-  },
-  "metaTerms": {
-    "痕跡暗黙モッド": "Vestigial Implicit Modifier",
-    "コラプト暗黙モッド": "Corruption Implicit Modifier",
-    "暗黙モッド": "Implicit Modifier",
-    "プレフィックスモッド": "Prefix Modifier",
-    "サフィックスモッド": "Suffix Modifier",
-    "マスタークラフト": "Master Crafted",
-    "フラクチャー": "Fractured",
-    "エレベートエルダーによる": "Elevated Elder's",
-    "エレベートシェイパーによる": "of Elevated Shaping",
-    "エッセンスの": "of the Essence",
-    "選ばれし": "Chosen",
-    "上級": "Upgraded",
-    "小": "Lesser",
-    "中": "Greater",
-    "大": "Grand",
-    "極大": "Exceptional",
-    "ジェム": "Gem",
-    "キャスター": "Caster",
-    "呪い": "Curse",
-    "スピード": "Speed",
-    "ダメージ": "Damage",
-    "クリティカル": "Critical",
-    "アタック": "Attack",
-    "物理": "Physical",
-    "混沌": "Chaos",
-    "雷": "Lightning",
-    "火": "Fire",
-    "冷気": "Cold",
-    "元素": "Elemental",
-    "防御": "Defences",
-    "ライフ": "Life",
-    "耐性": "Resistance",
-    "ティア": "Tier",
-    "ランク": "Rank"
   },
   "itemStates": {
     "ミラー状態": "Mirrored",
@@ -85,5 +50,41 @@
   "suffixCleaners": {
     " — スケールできない値": " — Unscalable Value"
   },
+  "rareNames": {
+    "prefixes": [
+      "Victory",
+      "Gloom",
+      "Armageddon",
+      "Soul",
+      "Honor",
+      "Brimstone",
+      "Dread",
+      "Storm"
+    ],
+    "suffixes": [
+      "Grasp",
+      "Claw",
+      "Touch",
+      "Hold",
+      "Finger",
+      "Vise",
+      "Knot",
+      "Ward"
+    ]
+  },
+  "normalizationRules": [
+    {
+      "jp": "(\\d+)\\([\\d\\.-]+\\)から(\\d+)\\([\\d\\.-]+\\)",
+      "en": "$1 to $2"
+    },
+    {
+      "jp": "(\\d+)\\([\\d\\.-]+\\)",
+      "en": "$1"
+    },
+    {
+      "jp": "(\\d+)\\s*から\\s*(\\d+)",
+      "en": "$1 to $2"
+    }
+  ],
   "mods": []
 }
