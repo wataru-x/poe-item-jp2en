@@ -1,18 +1,24 @@
 const fs = require('fs');
 const path = require('path');
 
-const REPOE_URL = 'https://raw.githubusercontent.com/brather1ng/RePoE/master/RePoE/data/stat_translations.json';
+const STAT_URL = 'https://raw.githubusercontent.com/brather1ng/RePoE/master/RePoE/data/stat_translations.json';
+const MODS_URL = 'https://raw.githubusercontent.com/brather1ng/RePoE/master/RePoE/data/mods.json';
 
 async function buildDictionary() {
-  console.log('🔄 RePoE (brather1ng/RePoE) から最新データを取得中...');
+  console.log('🔄 RePoE から全データを取得中...');
 
   try {
-    const res = await fetch(REPOE_URL);
-    if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
-    const statTranslations = await res.json();
+    const [statRes, modsRes] = await Promise.all([
+      fetch(STAT_URL),
+      fetch(MODS_URL)
+    ]);
 
+    if (!statRes.ok || !modsRes.ok) throw new Error('RePoEの取得に失敗しました');
+
+    const statTranslations = await statRes.json();
     const fetchedMods = [];
 
+    // 1. stat_translations.json の処理
     for (const entry of statTranslations) {
       if (!entry.English || !entry.Japanese) continue;
 
@@ -21,16 +27,14 @@ async function buildDictionary() {
         const jpObj = entry.Japanese[i] || entry.Japanese[0];
 
         if (enObj?.string && jpObj?.string) {
+          // {0}, {1}, {2} などの動的変数を全て表現できる正規表現を作成
           let jpPattern = jpObj.string
             .replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')
-            .replace(/\\\{0\\\}/g, '([\\d\\.-]+)')
-            .replace(/\\\{1\\\}/g, '([\\d\\.-]+)')
-            .replace(/\\\{2\\\}/g, '([\\d\\.-]+)');
+            .replace(/\\\{(\d+)\\\}/g, '(.*?)');
 
-          let enTemplate = enObj.string
-            .replace('{0}', '$1')
-            .replace('{1}', '$2')
-            .replace('{2}', '$3');
+          let enTemplate = enObj.string;
+          // {0} -> $1, {1} -> $2 ...
+          enTemplate = enTemplate.replace(/\{(\d+)\}/g, (match, p1) => `$${parseInt(p1) + 1}`);
 
           fetchedMods.push({
             jp: `^${jpPattern}$`,
@@ -52,6 +56,7 @@ async function buildDictionary() {
       metaTerms: overrides.metaTerms || {},
       itemStates: overrides.itemStates || {},
       suffixCleaners: overrides.suffixCleaners || {},
+      specialRules: overrides.specialRules || [],
       mods: [...fetchedMods, ...(overrides.mods || [])]
     };
 
@@ -61,7 +66,7 @@ async function buildDictionary() {
       'utf8'
     );
 
-    console.log(`✅ 完了: ${finalDict.mods.length} 件のModを収録した dictionary.json を生成しました。`);
+    console.log(`✅ 完了: ${finalDict.mods.length} 件のMod辞書を生成しました。`);
   } catch (err) {
     console.error('❌ 生成失敗:', err);
   }
