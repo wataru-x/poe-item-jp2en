@@ -48,5 +48,9 @@
   },
   "suffixCleaners": {
     " — スケールできない値": " — Unscalable Value"
+  },
+  "rareNames": {
+    "prefixes": ["Victory", "Gloom", "Armageddon", "Soul", "Honor", "Brimstone", "Dread", "Storm"],
+    "suffixes": ["Grasp", "Claw", "Touch", "Hold", "Finger", "Vise", "Knot", "Ward"]
   }
 }
