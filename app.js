@@ -1,11 +1,21 @@
 let dictionary = {
-  header: { itemClasses: {}, rarities: {}, names: {} },
+  header: { itemClasses: {}, rarities: {} },
+  baseItems: {},
   stats: {},
-  metaTerms: {},
   itemStates: {},
   suffixCleaners: {},
+  rareNames: { prefixes: [], suffixes: [] },
+  normalizationRules: [],
   mods: []
 };
+
+function getRandomRareName() {
+  const prefixes = dictionary.rareNames?.prefixes || ["Rare"];
+  const suffixes = dictionary.rareNames?.suffixes || ["Item"];
+  const pref = prefixes[Math.floor(Math.random() * prefixes.length)];
+  const suff = suffixes[Math.floor(Math.random() * suffixes.length)];
+  return `${pref} ${suff}`;
+}
 
 async function loadDictionary() {
   const statusEl = document.getElementById('status');
@@ -17,10 +27,6 @@ async function loadDictionary() {
     console.log('✅ 辞書読み込み完了');
   } catch (err) {
     console.error('❌ 辞書読み込み失敗:', err);
-    if (statusEl) {
-      statusEl.textContent = `❌ 辞書ファイルの読み込みに失敗しました (${err.message})`;
-      statusEl.style.color = 'red';
-    }
   }
 }
 
@@ -50,7 +56,7 @@ function convertItem() {
 }
 
 function parseHeaderBlock(lines) {
-  return lines.map(line => {
+  return lines.map((line, idx) => {
     let trimmed = line.trim();
 
     for (const [jpKey, enKey] of Object.entries(dictionary.header.itemClasses || {})) {
@@ -71,8 +77,14 @@ function parseHeaderBlock(lines) {
       return `Rarity: ${trimmed.replace("レアリティ:", "").trim()}`;
     }
 
-    if (dictionary.header.names?.[trimmed]) {
-      return dictionary.header.names[trimmed];
+    // 2行目の日本語レア名を英単語組み合わせに置換（文字化け防止）
+    if (idx === 2 && /^[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+/.test(trimmed)) {
+      return getRandomRareName();
+    }
+
+    // ベースアイテム名
+    if (dictionary.baseItems?.[trimmed]) {
+      return dictionary.baseItems[trimmed];
     }
 
     return trimmed;
@@ -83,57 +95,49 @@ function parseLine(line) {
   let trimmed = line.trim();
   if (!trimmed) return null;
 
-  // 1. 解説用カッコ行（説明文）の完全自動カット
-  if (trimmed.startsWith("(") && trimmed.endsWith(")")) {
-    const isMeta = Object.keys(dictionary.metaTerms || {}).some(t => trimmed.includes(t));
-    if (!isMeta && !trimmed.includes("augmented")) return null;
+  // メタタグ { ... } および解説カッコ ( ... ) のカット処理
+  if ((trimmed.startsWith("{") && trimmed.endsWith("}")) || 
+      (trimmed.startsWith("(") && trimmed.endsWith(")"))) {
+    return null;
   }
 
-  // 2. メタヘッダー { ... }
-  if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
-    return parseMetaHeader(trimmed);
-  }
-
-  // 3. アイテム状態
   if (dictionary.itemStates?.[trimmed]) {
     return dictionary.itemStates[trimmed];
   }
 
-  // 4. (augmented) などのステータスタグ除去
   let cleanLine = trimmed.replace(/\s*\((augmented|unmet)\)/gi, "");
 
-  // 5. ステータス項目
   for (const [jpKey, enKey] of Object.entries(dictionary.stats || {})) {
     if (cleanLine.startsWith(jpKey)) {
       return cleanLine.replace(jpKey, enKey);
     }
   }
 
-  // 6. モッド本文
   return translateModLine(cleanLine);
 }
 
 function translateModLine(line) {
   let mainText = line;
-  let appendedSuffix = "";
 
   for (const [jpSuff, enSuff] of Object.entries(dictionary.suffixCleaners || {})) {
     if (mainText.endsWith(jpSuff)) {
       mainText = mainText.slice(0, -jpSuff.length).trim();
-      appendedSuffix = enSuff;
       break;
     }
   }
 
-  // 数値表記の正規化 (例: 30(26-30)% -> 30%)
-  let normalizedText = mainText
-    .replace(/(\d+)\([\d\.-]+\)から(\d+)\([\d\.-]+\)/g, "$1 to $2")
-    .replace(/(\d+)\([\d\.-]+\)/g, "$1")
-    .replace(/(\d+)\s*から\s*(\d+)/g, "$1 to $2");
+  // 辞書から動的に読み込んだ正規化ルールを順次適用
+  let normalizedText = mainText;
+  for (const rule of dictionary.normalizationRules || []) {
+    try {
+      const reg = new RegExp(rule.jp, 'g');
+      normalizedText = normalizedText.replace(reg, rule.en);
+    } catch (e) {}
+  }
 
   let translatedMod = normalizedText;
 
-  // 自動生成された mods 辞書との照合
+  // 辞書ベースのマッチング（完全汎用）
   for (const rule of dictionary.mods || []) {
     try {
       const reg = new RegExp(rule.jp, 'i');
@@ -144,32 +148,7 @@ function translateModLine(line) {
     } catch (e) {}
   }
 
-  return translatedMod + (appendedSuffix ? " " + appendedSuffix : "");
-}
-
-function parseMetaHeader(headerStr) {
-  let inner = headerStr.slice(1, -1).trim();
-
-  inner = inner.replace(/「/g, '"').replace(/」/g, '"');
-
-  // 長い単語から順にメタ用語を置換
-  const sortedMetaTerms = Object.entries(dictionary.metaTerms || {})
-    .sort((a, b) => b[0].length - a[0].length);
-
-  for (const [jp, en] of sortedMetaTerms) {
-    if (inner.includes(jp)) {
-      const regKey = new RegExp(`${jp}:\\s*`, 'g');
-      inner = inner.replace(regKey, `${en}: `);
-      inner = inner.replaceAll(jp, en);
-    }
-  }
-
-  // 単語と記号の間のスペース整形
-  inner = inner.replace(/([a-zA-Z])"/g, '$1 "');
-  inner = inner.replace(/"([a-zA-Z])/g, '" $1');
-  inner = inner.replace(/\s+/g, ' ').trim();
-
-  return `{ ${inner} }`;
+  return translatedMod;
 }
 
 loadDictionary();
