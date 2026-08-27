@@ -2,10 +2,10 @@
   "header": {
     "itemClasses": {
       "手袋": "Gloves",
-      "盾": "Shields",
-      "胸防具": "Body Armours",
-      "兜": "Helmets",
       "靴": "Boots",
+      "兜": "Helmets",
+      "胸防具": "Body Armours",
+      "盾": "Shields",
       "指輪": "Rings",
       "アミュレット": "Amulets",
       "ベルト": "Belts"
@@ -19,11 +19,11 @@
   },
   "stats": {
     "品質:": "Quality:",
-    "ブロック率:": "Chance to Block:",
     "アーマー:": "Armour:",
-    "回避値:": "Evasion Rating:",
     "回避力:": "Evasion Rating:",
+    "回避値:": "Evasion Rating:",
     "エナジーシールド:": "Energy Shield:",
+    "ブロック率:": "Chance to Block:",
     "ワード:": "Ward:",
     "装備要求:": "Requirements:",
     "レベル:": "Level:",
@@ -34,30 +34,28 @@
     "アイテムレベル:": "Item Level:"
   },
   "metaTerms": {
-    "痕跡暗黙モッド": "Foil Implicit Modifier",
-    "コラプト暗黙モッド": "Corrupted Implicit Modifier",
+    "痕跡暗黙モッド": "Vestigial Implicit Modifier",
+    "コラプト暗黙モッド": "Corruption Implicit Modifier",
     "暗黙モッド": "Implicit Modifier",
     "プレフィックスモッド": "Prefix Modifier",
     "サフィックスモッド": "Suffix Modifier",
     "マスタークラフト": "Master Crafted",
     "フラクチャー": "Fractured",
-    "痕跡": "Foil",
-    "コラプト": "Corrupted",
-    "シアリング・エグザーク": "Searing Exarch",
-    "イーター・オブ・ワールズ": "Eater of Worlds",
     "エレベートエルダーによる": "Elevated Elder's",
-    "エレベートシェイパーによる": "Elevated Shaper's",
+    "エレベートシェイパーによる": "of Elevated Shaping",
     "エッセンスの": "of the Essence",
     "選ばれし": "Chosen",
-    "上級": "Powerful",
+    "上級": "Upgraded",
     "小": "Lesser",
     "中": "Greater",
     "大": "Grand",
     "極大": "Exceptional",
+    "ジェム": "Gem",
+    "キャスター": "Caster",
     "呪い": "Curse",
-    "クリティカル": "Critical",
-    "ダメージ": "Damage",
     "スピード": "Speed",
+    "ダメージ": "Damage",
+    "クリティカル": "Critical",
     "アタック": "Attack",
     "物理": "Physical",
     "混沌": "Chaos",
@@ -66,11 +64,7 @@
     "冷気": "Cold",
     "元素": "Elemental",
     "防御": "Defences",
-    "アーマー": "Armour",
-    "エナジーシールド": "Energy Shield",
     "ライフ": "Life",
-    "ジェム": "Gem",
-    "キャスター": "Caster",
     "耐性": "Resistance",
     "ティア": "Tier",
     "ランク": "Rank"
@@ -89,28 +83,7 @@
     "フラクチャーアイテム": "Fractured Item"
   },
   "suffixCleaners": {
-    " — スケールできない値": " — Cannot be Scaled"
+    " — スケールできない値": " — Unscalable Value"
   },
-  "specialRules": [
-    {
-      "jp": "^コラプト状態でも改変可能$",
-      "en": "Can be modified while Corrupted"
-    },
-    {
-      "jp": "^ヒット時に敵を(.+)で呪う$",
-      "en": "Curse Enemies with $1 on Hit"
-    },
-    {
-      "jp": "^ソケットされたジェムはレベル(\\d+)(.+)によりサポートされる$",
-      "en": "Socketed Gems are Supported by Level $1 $2"
-    },
-    {
-      "jp": "^ソケットされたジェムのクリティカル率 \\+([\\d\\.]+)%$",
-      "en": "+$1% Critical Strike Chance for Socketed Gems"
-    },
-    {
-      "jp": "^ソケットされたスペルのクリティカルダメージ倍率 \\+([\\d\\.]+)%$",
-      "en": "+$1% to Critical Strike Multiplier for Socketed Spells"
-    }
-  ]
+  "mods": []
 }
