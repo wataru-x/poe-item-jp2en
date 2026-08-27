@@ -1,6 +1,7 @@
 let dictionary = {
   header: { itemClasses: {}, rarities: {} },
   baseItems: {},
+  uniqueNames: {}, // ユニークアイテム名辞書
   stats: {},
   itemStates: {},
   suffixCleaners: {},
@@ -40,12 +41,15 @@ function convertItem() {
 
   const blocks = rawText.split(/^--------$/m);
 
+  // レアリティ判定（ブロック全体から判別）
+  const isUnique = /^レアリティ:\s*ユニーク/m.test(rawText) || /^Rarity:\s*Unique/m.test(rawText);
+
   const convertedBlocks = blocks.map((block, index) => {
     let lines = block.trim().split("\n");
     if (lines.length === 0 || (lines.length === 1 && lines[0] === "")) return "";
 
     if (index === 0) {
-      return parseHeaderBlock(lines);
+      return parseHeaderBlock(lines, isUnique);
     }
 
     const parsedLines = lines.map(line => parseLine(line)).filter(l => l !== null);
@@ -55,38 +59,34 @@ function convertItem() {
   outputEl.value = convertedBlocks.filter(b => b.trim() !== "").join("\n--------\n");
 }
 
-function parseHeaderBlock(lines) {
+function parseHeaderBlock(lines, isUnique) {
   return lines.map((line) => {
     let trimmed = line.trim();
 
     // 1. アイテムクラス
     for (const [jpKey, enKey] of Object.entries(dictionary.header.itemClasses || {})) {
-      if (trimmed.startsWith(`アイテムクラス: ${jpKey}`)) {
-        return `Item Class: ${enKey}`;
-      }
+      if (trimmed.startsWith(`アイテムクラス: ${jpKey}`)) return `Item Class: ${enKey}`;
     }
-    if (trimmed.startsWith("アイテムクラス:")) {
-      return `Item Class: ${trimmed.replace("アイテムクラス:", "").trim()}`;
-    }
+    if (trimmed.startsWith("アイテムクラス:")) return `Item Class: ${trimmed.replace("アイテムクラス:", "").trim()}`;
 
     // 2. レアリティ
     for (const [jpKey, enKey] of Object.entries(dictionary.header.rarities || {})) {
-      if (trimmed.startsWith(`レアリティ: ${jpKey}`)) {
-        return `Rarity: ${enKey}`;
-      }
+      if (trimmed.startsWith(`レアリティ: ${jpKey}`)) return `Rarity: ${enKey}`;
     }
-    if (trimmed.startsWith("レアリティ:")) {
-      return `Rarity: ${trimmed.replace("レアリティ:", "").trim()}`;
-    }
+    if (trimmed.startsWith("レアリティ:")) return `Rarity: ${trimmed.replace("レアリティ:", "").trim()}`;
 
-    // 3. ベースアイテム名（例: 絹織物のグローブ -> Silk Gloves）
-    // ※最優先で判定し、ベースアイテム名が勝手にレア名に置き換わるのを防ぎます
+    // 3. ベースアイテム名
     if (dictionary.baseItems?.[trimmed]) {
       return dictionary.baseItems[trimmed];
     }
 
-    // 4. 日本語が含まれる名前（レア名など）を英単語組み合わせに置換（PoB文字化け回避）
-    if (/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/.test(trimmed)) {
+    // 4. ユニークアイテム名（ユニーク判定時）
+    if (isUnique && dictionary.uniqueNames?.[trimmed]) {
+      return dictionary.uniqueNames[trimmed];
+    }
+
+    // 5. レアアイテム名（日本語が含まれている場合のみランダム英名に置換）
+    if (!isUnique && /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/.test(trimmed)) {
       return getRandomRareName();
     }
 
@@ -98,25 +98,38 @@ function parseLine(line) {
   let trimmed = line.trim();
   if (!trimmed) return null;
 
-  // メタタグ { ... } および解説カッコ ( ... ) のカット処理
+  // メタタグ { ... } および解説カッコ ( ... ) を一括削除
   if ((trimmed.startsWith("{") && trimmed.endsWith("}")) || 
       (trimmed.startsWith("(") && trimmed.endsWith(")"))) {
     return null;
   }
 
+  // 状態フラグ（Mirrored, Corrupted等）
   if (dictionary.itemStates?.[trimmed]) {
     return dictionary.itemStates[trimmed];
   }
 
-  let cleanLine = trimmed.replace(/\s*\((augmented|unmet)\)/gi, "");
+  // 補足文字列のクリーンアップ
+  let cleanLine = trimmed.replace(/\s*\(augmented\)/gi, "").replace(/\s*\(unmet\)/gi, "");
 
+  // ステータス行・装備要求の変換（英語辞書マッピング）
   for (const [jpKey, enKey] of Object.entries(dictionary.stats || {})) {
     if (cleanLine.startsWith(jpKey)) {
       return cleanLine.replace(jpKey, enKey);
     }
   }
 
+  // 日本語のフレーバーテキスト（ポエム）行を検出して破棄
+  if (/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/.test(cleanLine) && !containsModKeywords(cleanLine)) {
+    return null;
+  }
+
   return translateModLine(cleanLine);
+}
+
+// モッド行かフレーバーテキストかを判定するための補助関数
+function containsModKeywords(line) {
+  return /(\+|\%|レベル|増加|減少|付与|確率|ダメ|ヒット|追加)/.test(line);
 }
 
 function translateModLine(line) {
@@ -129,7 +142,6 @@ function translateModLine(line) {
     }
   }
 
-  // 辞書から動的に読み込んだ正規化ルールを順次適用
   let normalizedText = mainText;
   for (const rule of dictionary.normalizationRules || []) {
     try {
@@ -140,7 +152,6 @@ function translateModLine(line) {
 
   let translatedMod = normalizedText;
 
-  // 辞書ベースのマッチング
   for (const rule of dictionary.mods || []) {
     try {
       const reg = new RegExp(rule.jp, 'i');
