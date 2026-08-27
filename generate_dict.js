@@ -8,7 +8,6 @@ async function buildDictionary() {
   console.log('🔄 RePoE から最新データを自動取得中...');
 
   try {
-    // 1. stat_translations の取得
     const resStats = await fetch(STAT_URL);
     if (!resStats.ok) throw new Error(`Stats HTTP Error: ${resStats.status}`);
     const statTranslations = await resStats.json();
@@ -26,13 +25,9 @@ async function buildDictionary() {
           let jpStr = jpObj.string;
           let enStr = enObj.string;
 
-          // 正規表現エスケープ
           let jpPattern = jpStr.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
-
-          // {0}, {1} などを「数値やスキル名を含む任意の文字列」にマッチさせる
           jpPattern = jpPattern.replace(/\\\{(\d+)\\\}/g, '(.+?)');
 
-          // 英語側の {0}, {1} を $1, $2 へ
           let enTemplate = enStr.replace(/\{(\d+)\}/g, (match, p1) => `$${parseInt(p1) + 1}`);
 
           fetchedMods.push({
@@ -43,7 +38,6 @@ async function buildDictionary() {
       }
     }
 
-    // 2. ベースアイテム名 (base_items.json) の取得
     const baseItems = {};
     try {
       const resBases = await fetch(BASE_ITEMS_URL);
@@ -66,12 +60,24 @@ async function buildDictionary() {
       overrides = JSON.parse(fs.readFileSync(overridesPath, 'utf8'));
     }
 
+    // 共通のテキスト正規化用パターン（数値可変表記などの吸収）も辞書側に持たせる
+    const normalizationRules = [
+      { jp: "(\\d+)\\([\\d\\.-]+\\)から(\\d+)\\([\\d\\.-]+\\)", en: "$1 to $2" },
+      { jp: "(\\d+)\\([\\d\\.-]+\\)", en: "$1" },
+      { jp: "(\\d+)\\s*から\\s*(\\d+)", en: "$1 to $2" }
+    ];
+
     const finalDict = {
       header: overrides.header || {},
       baseItems: baseItems,
       stats: overrides.stats || {},
       itemStates: overrides.itemStates || {},
       suffixCleaners: overrides.suffixCleaners || {},
+      rareNames: overrides.rareNames || {
+        prefixes: ["Victory", "Gloom", "Armageddon", "Soul", "Honor", "Brimstone", "Dread", "Storm"],
+        suffixes: ["Grasp", "Claw", "Touch", "Hold", "Finger", "Vise", "Knot", "Ward"]
+      },
+      normalizationRules: normalizationRules,
       mods: fetchedMods
     };
 
@@ -81,7 +87,7 @@ async function buildDictionary() {
       'utf8'
     );
 
-    console.log(`✅ 生成完了: ${finalDict.mods.length} 件のModパターンと ${Object.keys(baseItems).length} 件のベースアイテム名を収録しました。`);
+    console.log(`✅ 生成完了: ${finalDict.mods.length} 件のModパターンを辞書化しました。`);
   } catch (err) {
     console.error('❌ 生成失敗:', err);
   }
