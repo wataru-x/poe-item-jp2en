@@ -10,8 +10,8 @@ let dictionary = {
 };
 
 function getRandomRareName() {
-  const prefixes = dictionary.rareNames?.prefixes || ["Rare"];
-  const suffixes = dictionary.rareNames?.suffixes || ["Item"];
+  const prefixes = dictionary.rareNames?.prefixes || ["Victory", "Gloom", "Armageddon", "Soul"];
+  const suffixes = dictionary.rareNames?.suffixes || ["Grasp", "Claw", "Touch", "Hold"];
   const pref = prefixes[Math.floor(Math.random() * prefixes.length)];
   const suff = suffixes[Math.floor(Math.random() * suffixes.length)];
   return `${pref} ${suff}`;
@@ -56,9 +56,10 @@ function convertItem() {
 }
 
 function parseHeaderBlock(lines) {
-  return lines.map((line, idx) => {
+  return lines.map((line) => {
     let trimmed = line.trim();
 
+    // 1. アイテムクラス
     for (const [jpKey, enKey] of Object.entries(dictionary.header.itemClasses || {})) {
       if (trimmed.startsWith(`アイテムクラス: ${jpKey}`)) {
         return `Item Class: ${enKey}`;
@@ -68,6 +69,7 @@ function parseHeaderBlock(lines) {
       return `Item Class: ${trimmed.replace("アイテムクラス:", "").trim()}`;
     }
 
+    // 2. レアリティ
     for (const [jpKey, enKey] of Object.entries(dictionary.header.rarities || {})) {
       if (trimmed.startsWith(`レアリティ: ${jpKey}`)) {
         return `Rarity: ${enKey}`;
@@ -77,14 +79,15 @@ function parseHeaderBlock(lines) {
       return `Rarity: ${trimmed.replace("レアリティ:", "").trim()}`;
     }
 
-    // 2行目の日本語レア名を英単語組み合わせに置換（文字化け防止）
-    if (idx === 2 && /^[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+/.test(trimmed)) {
-      return getRandomRareName();
-    }
-
-    // ベースアイテム名
+    // 3. ベースアイテム名（例: 絹織物のグローブ -> Silk Gloves）
+    // ※最優先で判定し、ベースアイテム名が勝手にレア名に置き換わるのを防ぎます
     if (dictionary.baseItems?.[trimmed]) {
       return dictionary.baseItems[trimmed];
+    }
+
+    // 4. 日本語が含まれる名前（レア名など）を英単語組み合わせに置換（PoB文字化け回避）
+    if (/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/.test(trimmed)) {
+      return getRandomRareName();
     }
 
     return trimmed;
@@ -137,7 +140,7 @@ function translateModLine(line) {
 
   let translatedMod = normalizedText;
 
-  // 辞書ベースのマッチング（完全汎用）
+  // 辞書ベースのマッチング
   for (const rule of dictionary.mods || []) {
     try {
       const reg = new RegExp(rule.jp, 'i');
