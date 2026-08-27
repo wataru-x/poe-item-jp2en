@@ -1,6 +1,20 @@
 {
   "header": {
     "itemClasses": {
+      "片手剣": "One Hand Swords",
+      "両手剣": "Two Hand Swords",
+      "爪": "Claws",
+      "短剣": "Daggers",
+      "ルーンの短剣": "Rune Daggers",
+      "片手斧": "One Hand Axes",
+      "両手斧": "Two Hand Axes",
+      "片手棍:": "One Hand Maces",
+      "両手棍": "Two Hand Maces",
+      "セプター": "Sceptres",
+      "弓": "Bows",
+      "杖": "Staves",
+      "戦闘杖": "Warstaves",
+      "杖/ワンド": "Wands",
       "手袋": "Gloves",
       "靴": "Boots",
       "兜": "Helmets",
@@ -8,7 +22,10 @@
       "盾": "Shields",
       "指輪": "Rings",
       "アミュレット": "Amulets",
-      "ベルト": "Belts"
+      "ベルト": "Belts",
+      "矢筒": "Quivers",
+      "フラスコ": "Flasks",
+      "ジュエル": "Jewels"
     },
     "rarities": {
       "ノーマル": "Normal",
@@ -20,6 +37,12 @@
   "baseItems": {},
   "stats": {
     "品質:": "Quality:",
+    "物理ダメージ:": "Physical Damage:",
+    "元素ダメージ:": "Elemental Damage:",
+    "クリティカル率:": "Critical Strike Chance:",
+    "秒間アタック回数:": "Attacks per Second:",
+    "武器攻撃距離：": "Weapon Range: ",
+    "武器攻撃距離:": "Weapon Range: ",
     "アーマー:": "Armour:",
     "回避力:": "Evasion Rating:",
     "回避値:": "Evasion Rating:",
@@ -45,11 +68,28 @@
     "クルセイダーアイテム": "Crusader Item",
     "シアリング・エグザークのアイテム": "Searing Exarch Item",
     "イーター・オブ・ワールズのアイテム": "Eater of Worlds Item",
-    "フラクチャーアイテム": "Fractured Item"
+    "フラクチャーアイテム": "Fractured Item",
+    "合成アイテム": "Synthesised Item"
   },
   "suffixCleaners": {
-    " — スケールできない値": " — Unscalable Value"
+    " — スケールできない値": " — Unscalable Value",
+    " — プレフィックス": "",
+    " — サフィックス": ""
   },
+  "pobOverrides": [
+    {
+      "jp": "^ソケットされたジェムのクリティカル率 \\+(\\d+(\\.\\d+)?)%$",
+      "en": "Socketed Gems have +$1% Base Critical Strike Chance"
+    },
+    {
+      "jp": "^ソケットされたスペルのクリティカルダメージ倍率 \\+(\\d+)%$",
+      "en": "Socketed Spells have +$1% to Critical Strike Multiplier"
+    },
+    {
+      "jp": "^ソケットされたジェムはレベル(\\d+)キャストスピードによりサポートされる$",
+      "en": "Socketed Gems are Supported by Level $1 Faster Casting"
+    }
+  ],
   "rareNames": {
     "prefixes": [
       "Victory",
@@ -59,7 +99,9 @@
       "Honor",
       "Brimstone",
       "Dread",
-      "Storm"
+      "Storm",
+      "Vengeance",
+      "Dragon"
     ],
     "suffixes": [
       "Grasp",
@@ -69,22 +111,10 @@
       "Finger",
       "Vise",
       "Knot",
-      "Ward"
+      "Ward",
+      "Mark",
+      "Aura"
     ]
   },
-  "normalizationRules": [
-    {
-      "jp": "(\\d+)\\([\\d\\.-]+\\)から(\\d+)\\([\\d\\.-]+\\)",
-      "en": "$1 to $2"
-    },
-    {
-      "jp": "(\\d+)\\([\\d\\.-]+\\)",
-      "en": "$1"
-    },
-    {
-      "jp": "(\\d+)\\s*から\\s*(\\d+)",
-      "en": "$1 to $2"
-    }
-  ],
   "mods": []
 }
