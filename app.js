@@ -4,26 +4,21 @@ let dictionary = {
   metaTerms: {},
   itemStates: {},
   suffixCleaners: {},
-  specialRules: [],
   mods: []
 };
 
 async function loadDictionary() {
   const statusEl = document.getElementById('status');
   try {
-    const response = await fetch('./dictionary.json');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    dictionary = await response.json();
+    const res = await fetch('./dictionary.json');
+    if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+    dictionary = await res.json();
+    if (statusEl) statusEl.style.display = 'none';
+    console.log('✅ 辞書読み込み完了');
+  } catch (err) {
+    console.error('❌ 辞書読み込み失敗:', err);
     if (statusEl) {
-      statusEl.style.display = 'none';
-    }
-    console.log('✅ 辞書データの読み込み完了');
-  } catch (error) {
-    console.error('❌ 辞書の読み込み失敗:', error);
-    if (statusEl) {
-      statusEl.textContent = `❌ 辞書データの読み込みエラー: ${error.message}`;
+      statusEl.textContent = `❌ 辞書ファイルの読み込みに失敗しました (${err.message})`;
       statusEl.style.color = 'red';
     }
   }
@@ -88,13 +83,10 @@ function parseLine(line) {
   let trimmed = line.trim();
   if (!trimmed) return null;
 
-  // 1. メタ用語を含まない解説カッコ行の削除
+  // 1. 解説用カッコ行の削除
   if (trimmed.startsWith("(") && trimmed.endsWith(")")) {
-    const isMetaBracket = Object.keys(dictionary.metaTerms || {}).some(term => trimmed.includes(term));
-    const isStatusTag = trimmed.includes("augmented") || trimmed.includes("unmet");
-    if (!isMetaBracket && !isStatusTag) {
-      return null;
-    }
+    const isMeta = Object.keys(dictionary.metaTerms || {}).some(t => trimmed.includes(t));
+    if (!isMeta && !trimmed.includes("augmented")) return null;
   }
 
   // 2. メタヘッダー { ... }
@@ -107,11 +99,11 @@ function parseLine(line) {
     return dictionary.itemStates[trimmed];
   }
 
-  // 4. (augmented) 等のステータスタグ除去
+  // 4. (augmented) などのステータスタグ除去
   let cleanLine = trimmed.replace(/\s*\((augmented|unmet)\)/gi, "");
 
   // 5. ステータス項目
-  for (const [jpKey, enKey] of Object.entries(dictionary.stats)) {
+  for (const [jpKey, enKey] of Object.entries(dictionary.stats || {})) {
     if (cleanLine.startsWith(jpKey)) {
       return cleanLine.replace(jpKey, enKey);
     }
@@ -125,7 +117,6 @@ function translateModLine(line) {
   let mainText = line;
   let appendedSuffix = "";
 
-  // 末尾サフィックスの分離
   for (const [jpSuff, enSuff] of Object.entries(dictionary.suffixCleaners || {})) {
     if (mainText.endsWith(jpSuff)) {
       mainText = mainText.slice(0, -jpSuff.length).trim();
@@ -134,7 +125,7 @@ function translateModLine(line) {
     }
   }
 
-  // 可変値表記の数値範囲正規化（共通フォーマット処理）
+  // 可変値表記の正規化
   let normalizedText = mainText
     .replace(/(\d+)\([\d\.-]+\)から(\d+)\([\d\.-]+\)/g, "$1 to $2")
     .replace(/(\d+)\([\d\.-]+\)/g, "$1")
@@ -142,7 +133,7 @@ function translateModLine(line) {
 
   let translatedMod = normalizedText;
 
-  // 1. 標準モッド辞書との照合
+  // 辞書照合
   for (const rule of dictionary.mods || []) {
     try {
       const reg = new RegExp(rule.jp, 'i');
@@ -153,29 +144,14 @@ function translateModLine(line) {
     } catch (e) {}
   }
 
-  // 2. 辞書側の特殊ルールの照合 (overrides.json の specialRules を使用)
-  if (translatedMod === normalizedText && dictionary.specialRules) {
-    for (const rule of dictionary.specialRules) {
-      try {
-        const reg = new RegExp(rule.jp, 'i');
-        if (reg.test(normalizedText)) {
-          translatedMod = normalizedText.replace(reg, rule.en);
-          break;
-        }
-      } catch (e) {}
-    }
-  }
-
   return translatedMod + (appendedSuffix ? " " + appendedSuffix : "");
 }
 
 function parseMetaHeader(headerStr) {
   let inner = headerStr.slice(1, -1).trim();
 
-  // 記号・引用符の正規化
   inner = inner.replace(/「/g, '"').replace(/」/g, '"');
 
-  // メタ用語の長順置換
   const sortedMetaTerms = Object.entries(dictionary.metaTerms || {})
     .sort((a, b) => b[0].length - a[0].length);
 
@@ -187,7 +163,6 @@ function parseMetaHeader(headerStr) {
     }
   }
 
-  // スペース整形
   inner = inner.replace(/([a-zA-Z])"/g, '$1 "');
   inner = inner.replace(/"([a-zA-Z])/g, '" $1');
   inner = inner.replace(/\s+/g, ' ').trim();
