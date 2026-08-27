@@ -83,7 +83,7 @@ function parseLine(line) {
   let trimmed = line.trim();
   if (!trimmed) return null;
 
-  // 1. 解説用カッコ行の削除
+  // 1. 解説用カッコ行（説明文）の完全自動カット
   if (trimmed.startsWith("(") && trimmed.endsWith(")")) {
     const isMeta = Object.keys(dictionary.metaTerms || {}).some(t => trimmed.includes(t));
     if (!isMeta && !trimmed.includes("augmented")) return null;
@@ -125,7 +125,7 @@ function translateModLine(line) {
     }
   }
 
-  // 可変値表記の正規化
+  // 数値表記の正規化 (例: 30(26-30)% -> 30%)
   let normalizedText = mainText
     .replace(/(\d+)\([\d\.-]+\)から(\d+)\([\d\.-]+\)/g, "$1 to $2")
     .replace(/(\d+)\([\d\.-]+\)/g, "$1")
@@ -133,7 +133,7 @@ function translateModLine(line) {
 
   let translatedMod = normalizedText;
 
-  // 辞書照合
+  // 自動生成された mods 辞書との照合
   for (const rule of dictionary.mods || []) {
     try {
       const reg = new RegExp(rule.jp, 'i');
@@ -152,6 +152,7 @@ function parseMetaHeader(headerStr) {
 
   inner = inner.replace(/「/g, '"').replace(/」/g, '"');
 
+  // 長い単語から順にメタ用語を置換
   const sortedMetaTerms = Object.entries(dictionary.metaTerms || {})
     .sort((a, b) => b[0].length - a[0].length);
 
@@ -163,6 +164,7 @@ function parseMetaHeader(headerStr) {
     }
   }
 
+  // 単語と記号の間のスペース整形
   inner = inner.replace(/([a-zA-Z])"/g, '$1 "');
   inner = inner.replace(/"([a-zA-Z])/g, '" $1');
   inner = inner.replace(/\s+/g, ' ').trim();
