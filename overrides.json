@@ -84,32 +84,5 @@
   },
   "suffixCleaners": {
     " — スケールできない値": " — Unscalable Value"
-  },
-  "specialRules": [
-    {
-      "jp": "^コラプト状態でも改変可能$",
-      "en": "Can be modified while Corrupted"
-    },
-    {
-      "jp": "^ヒット時に敵をパニッシュメントで呪う$",
-      "en": "Curse Enemies with Punishment on Hit"
-    },
-    {
-      "jp": "^ソケットされたジェムはレベル(\\d+)投射物高速化によりサポートされる$",
-      "en": "Socketed Gems are Supported by Level $1 Faster Projectiles"
-    },
-    {
-      "jp": "^ソケットされたジェムはレベル(\\d+)キャストスピードによりサポートされる$",
-      "en": "Socketed Gems are Supported by Level $1 Faster Casting"
-    },
-    {
-      "jp": "^ソケットされたスペルのクリティカルダメージ倍率 \\+([\\d\\.]+)%$",
-      "en": "Socketed Spells have +$1% to Critical Strike Multiplier"
-    },
-    {
-      "jp": "^ソケットされたジェムのクリティカル率 \\+([\\d\\.]+)%$",
-      "en": "Socketed Gems have +$1% Critical Strike Chance"
-    }
-  ],
-  "mods": []
+  }
 }
