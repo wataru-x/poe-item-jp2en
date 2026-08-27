@@ -1,151 +1,70 @@
 const fs = require('fs');
+const path = require('path');
 
-async function fetchTradeData(endpoint, lang) {
-  const domain = lang === 'jp' ? 'jp.pathofexile.com' : 'www.pathofexile.com';
-  const response = await fetch(`https://${domain}/api/trade/data/${endpoint}`, {
-    headers: { 'User-Agent': 'PoE-JP2EN-Converter/1.0' }
-  });
-  if (!response.ok) throw new Error(`Trade API Error [${endpoint}]: ${response.status}`);
-  const data = await response.json();
-  return data.result;
-}
+const REPOE_URL = 'https://raw.githubusercontent.com/brather1ng/RePoE/master/RePoE/data/stat_translations.json';
 
-async function fetchJson(url) {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`Fetch Error [${url}]: ${response.status}`);
-  return await response.json();
-}
+async function buildDictionary() {
+  console.log('🔄 RePoE (brather1ng/RePoE) から最新データを取得中...');
 
-async function generateDictionary() {
-  console.log('--- 1/3: PoE 公式 Trade API からデータ取得中 ---');
-  let enStats = [], jpStats = [], enItems = [], jpItems = [];
   try {
-    [enStats, jpStats, enItems, jpItems] = await Promise.all([
-      fetchTradeData('stats', 'en'),
-      fetchTradeData('stats', 'jp'),
-      fetchTradeData('items', 'en'),
-      fetchTradeData('items', 'jp')
-    ]);
-  } catch (e) {
-    console.warn('Trade API 取得失敗:', e.message);
-  }
+    const res = await fetch(REPOE_URL);
+    if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+    const statTranslations = await res.json();
 
-  console.log('--- 2/3: RePoE データセット取得中 ---');
-  let repoeUniques = {};
-  try {
-    repoeUniques = await fetchJson('https://raw.githubusercontent.com/brather1ng/RePoE/master/RePoE/data/uniques.json');
-  } catch (e) {
-    console.warn('RePoE 取得失敗:', e.message);
-  }
+    const fetchedMods = [];
 
-  // overrides.json の読み込み（存在しない場合は空オブジェクト）
-  let overrides = { header: { itemClasses: {}, rarities: {} }, stats: {}, metaTerms: {}, itemStates: {} };
-  if (fs.existsSync('./overrides.json')) {
-    try {
-      overrides = JSON.parse(fs.readFileSync('./overrides.json', 'utf8'));
-      console.log('overrides.json を読み込みました');
-    } catch (e) {
-      console.warn('overrides.json の読み込み失敗:', e.message);
-    }
-  }
+    for (const entry of statTranslations) {
+      if (!entry.English || !entry.Japanese) continue;
 
-  const dict = {
-    header: {
-      itemClasses: { ...overrides.header?.itemClasses },
-      rarities: { ...overrides.header?.rarities },
-      names: {}
-    },
-    stats: { ...overrides.stats },
-    metaTerms: { ...overrides.metaTerms },
-    itemStates: { ...overrides.itemStates },
-    mods: []
-  };
+      for (let i = 0; i < entry.English.length; i++) {
+        const enObj = entry.English[i];
+        const jpObj = entry.Japanese[i] || entry.Japanese[0];
 
-  // アイテム名・ベース名マッピング
-  enItems.forEach((cat, cIdx) => {
-    const jCat = jpItems[cIdx];
-    if (!jCat || !jCat.entries) return;
+        if (enObj?.string && jpObj?.string) {
+          let jpPattern = jpObj.string
+            .replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')
+            .replace(/\\\{0\\\}/g, '([\\d\\.-]+)')
+            .replace(/\\\{1\\\}/g, '([\\d\\.-]+)')
+            .replace(/\\\{2\\\}/g, '([\\d\\.-]+)');
 
-    if (jCat.label && cat.label) {
-      dict.header.itemClasses[jCat.label.trim()] = cat.label.trim();
-    }
+          let enTemplate = enObj.string
+            .replace('{0}', '$1')
+            .replace('{1}', '$2')
+            .replace('{2}', '$3');
 
-    cat.entries.forEach((enEntry, eIdx) => {
-      const jpEntry = jCat.entries[eIdx];
-      if (!jpEntry) return;
-
-      if (jpEntry.name && enEntry.name) dict.header.names[jpEntry.name.trim()] = enEntry.name.trim();
-      if (jpEntry.type && enEntry.type) dict.header.names[jpEntry.type.trim()] = enEntry.type.trim();
-    });
-  });
-
-  // RePoE から補完
-  const seenModJp = new Set();
-  for (const [key, item] of Object.entries(repoeUniques)) {
-    if (item.name && item.name_translated && item.name_translated.ja) {
-      dict.header.names[item.name_translated.ja.trim()] = item.name.trim();
-    }
-    if (item.base_item && item.base_item_translated && item.base_item_translated.ja) {
-      dict.header.names[item.base_item_translated.ja.trim()] = item.base_item.trim();
-    }
-
-    if (item.mods) {
-      item.mods.forEach(mod => {
-        if (mod.text && mod.text_translated && mod.text_translated.ja) {
-          const jpText = mod.text_translated.ja.trim();
-          const enText = mod.text.trim();
-
-          if (!seenModJp.has(jpText)) {
-            seenModJp.add(jpText);
-            addModRule(dict.mods, jpText, enText, `repoe_${key}`);
-          }
+          fetchedMods.push({
+            jp: `^${jpPattern}$`,
+            en: enTemplate
+          });
         }
-      });
+      }
     }
+
+    const overridesPath = path.join(__dirname, 'overrides.json');
+    let overrides = {};
+    if (fs.existsSync(overridesPath)) {
+      overrides = JSON.parse(fs.readFileSync(overridesPath, 'utf8'));
+    }
+
+    const finalDict = {
+      header: overrides.header || {},
+      stats: overrides.stats || {},
+      metaTerms: overrides.metaTerms || {},
+      itemStates: overrides.itemStates || {},
+      suffixCleaners: overrides.suffixCleaners || {},
+      mods: [...fetchedMods, ...(overrides.mods || [])]
+    };
+
+    fs.writeFileSync(
+      path.join(__dirname, 'dictionary.json'),
+      JSON.stringify(finalDict, null, 2),
+      'utf8'
+    );
+
+    console.log(`✅ 完了: ${finalDict.mods.length} 件のModを収録した dictionary.json を生成しました。`);
+  } catch (err) {
+    console.error('❌ 生成失敗:', err);
   }
-
-  // 公式 API モッドマッピング
-  const enModMap = new Map();
-  enStats.forEach(cat => {
-    if (cat.entries) {
-      cat.entries.forEach(entry => {
-        if (entry.id) enModMap.set(entry.id, entry.text);
-      });
-    }
-  });
-
-  jpStats.forEach(cat => {
-    if (cat.entries) {
-      cat.entries.forEach(jpEntry => {
-        const enText = enModMap.get(jpEntry.id);
-        if (!enText || !jpEntry.text) return;
-
-        let jpText = jpEntry.text.trim();
-        if (seenModJp.has(jpText)) return;
-        seenModJp.add(jpText);
-
-        addModRule(dict.mods, jpText, enText, jpEntry.id);
-      });
-    }
-  });
-
-  console.log('--- 3/3: dictionary.json へ書き出し中 ---');
-  fs.writeFileSync('./dictionary.json', JSON.stringify(dict, null, 2), 'utf8');
-  console.log('生成完了!');
 }
 
-// モッドルール生成ロジックの共通化
-function addModRule(modsArray, jpText, enText, id) {
-  let escapedJp = jpText.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
-  let jpRegex = escapedJp.replace(/#/g, "([+\\-\\d\\.]+)(?:\\([\\d\\.\\-]+\\))?");
-
-  let groupCount = 1;
-  let enTemplate = enText;
-  while (enTemplate.includes('#')) {
-    enTemplate = enTemplate.replace('#', `$${groupCount++}`);
-  }
-
-  modsArray.push({ id, jp: `^${jpRegex}$`, en: enTemplate });
-}
-
-generateDictionary();
+buildDictionary();
