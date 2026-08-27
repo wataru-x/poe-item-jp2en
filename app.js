@@ -1,30 +1,10 @@
-let dictionary = {
-  header: { itemClasses: {}, rarities: {} },
-  baseItems: {},
-  uniqueNames: {}, // ユニークアイテム名辞書
-  stats: {},
-  itemStates: {},
-  suffixCleaners: {},
-  rareNames: { prefixes: [], suffixes: [] },
-  normalizationRules: [],
-  mods: []
-};
+let dictionary = {};
 
-function getRandomRareName() {
-  const prefixes = dictionary.rareNames?.prefixes || ["Victory", "Gloom", "Armageddon", "Soul"];
-  const suffixes = dictionary.rareNames?.suffixes || ["Grasp", "Claw", "Touch", "Hold"];
-  const pref = prefixes[Math.floor(Math.random() * prefixes.length)];
-  const suff = suffixes[Math.floor(Math.random() * suffixes.length)];
-  return `${pref} ${suff}`;
-}
-
+// 辞書読み込み
 async function loadDictionary() {
-  const statusEl = document.getElementById('status');
   try {
     const res = await fetch('./dictionary.json');
-    if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
     dictionary = await res.json();
-    if (statusEl) statusEl.style.display = 'none';
     console.log('✅ 辞書読み込み完了');
   } catch (err) {
     console.error('❌ 辞書読み込み失敗:', err);
@@ -41,16 +21,9 @@ function convertItem() {
 
   const blocks = rawText.split(/^--------$/m);
 
-  // レアリティ判定（ブロック全体から判別）
-  const isUnique = /^レアリティ:\s*ユニーク/m.test(rawText) || /^Rarity:\s*Unique/m.test(rawText);
-
-  const convertedBlocks = blocks.map((block, index) => {
+  const convertedBlocks = blocks.map((block) => {
     let lines = block.trim().split("\n");
     if (lines.length === 0 || (lines.length === 1 && lines[0] === "")) return "";
-
-    if (index === 0) {
-      return parseHeaderBlock(lines, isUnique);
-    }
 
     const parsedLines = lines.map(line => parseLine(line)).filter(l => l !== null);
     return parsedLines.join("\n");
@@ -59,110 +32,80 @@ function convertItem() {
   outputEl.value = convertedBlocks.filter(b => b.trim() !== "").join("\n--------\n");
 }
 
-function parseHeaderBlock(lines, isUnique) {
-  return lines.map((line) => {
-    let trimmed = line.trim();
-
-    // 1. アイテムクラス
-    for (const [jpKey, enKey] of Object.entries(dictionary.header.itemClasses || {})) {
-      if (trimmed.startsWith(`アイテムクラス: ${jpKey}`)) return `Item Class: ${enKey}`;
-    }
-    if (trimmed.startsWith("アイテムクラス:")) return `Item Class: ${trimmed.replace("アイテムクラス:", "").trim()}`;
-
-    // 2. レアリティ
-    for (const [jpKey, enKey] of Object.entries(dictionary.header.rarities || {})) {
-      if (trimmed.startsWith(`レアリティ: ${jpKey}`)) return `Rarity: ${enKey}`;
-    }
-    if (trimmed.startsWith("レアリティ:")) return `Rarity: ${trimmed.replace("レアリティ:", "").trim()}`;
-
-    // 3. ベースアイテム名
-    if (dictionary.baseItems?.[trimmed]) {
-      return dictionary.baseItems[trimmed];
-    }
-
-    // 4. ユニークアイテム名（ユニーク判定時）
-    if (isUnique && dictionary.uniqueNames?.[trimmed]) {
-      return dictionary.uniqueNames[trimmed];
-    }
-
-    // 5. レアアイテム名（日本語が含まれている場合のみランダム英名に置換）
-    if (!isUnique && /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/.test(trimmed)) {
-      return getRandomRareName();
-    }
-
-    return trimmed;
-  }).join("\n");
-}
-
 function parseLine(line) {
   let trimmed = line.trim();
   if (!trimmed) return null;
 
-  // メタタグ { ... } および解説カッコ ( ... ) を一括削除
+  // 1. ノイズ行（メタタグ {...} や 解説文 (...)）の除去
   if ((trimmed.startsWith("{") && trimmed.endsWith("}")) || 
       (trimmed.startsWith("(") && trimmed.endsWith(")"))) {
     return null;
   }
 
-  // 状態フラグ（Mirrored, Corrupted等）
-  if (dictionary.itemStates?.[trimmed]) {
-    return dictionary.itemStates[trimmed];
-  }
-
-  // 補足文字列のクリーンアップ
-  let cleanLine = trimmed.replace(/\s*\(augmented\)/gi, "").replace(/\s*\(unmet\)/gi, "");
-
-  // ステータス行・装備要求の変換（英語辞書マッピング）
-  for (const [jpKey, enKey] of Object.entries(dictionary.stats || {})) {
-    if (cleanLine.startsWith(jpKey)) {
-      return cleanLine.replace(jpKey, enKey);
-    }
-  }
-
-  // 日本語のフレーバーテキスト（ポエム）行を検出して破棄
-  if (/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/.test(cleanLine) && !containsModKeywords(cleanLine)) {
-    return null;
-  }
-
-  return translateModLine(cleanLine);
-}
-
-// モッド行かフレーバーテキストかを判定するための補助関数
-function containsModKeywords(line) {
-  return /(\+|\%|レベル|増加|減少|付与|確率|ダメ|ヒット|追加)/.test(line);
-}
-
-function translateModLine(line) {
-  let mainText = line;
-
+  // 2. ゴミ末尾（— スケールできない値 など）の削り落とし
   for (const [jpSuff, enSuff] of Object.entries(dictionary.suffixCleaners || {})) {
-    if (mainText.endsWith(jpSuff)) {
-      mainText = mainText.slice(0, -jpSuff.length).trim();
+    if (trimmed.endsWith(jpSuff)) {
+      trimmed = trimmed.slice(0, -jpSuff.length).trim();
       break;
     }
   }
 
-  let normalizedText = mainText;
-  for (const rule of dictionary.normalizationRules || []) {
-    try {
-      const reg = new RegExp(rule.jp, 'g');
-      normalizedText = normalizedText.replace(reg, rule.en);
-    } catch (e) {}
+  // 3. アイテム状態 (Corrupted等)
+  if (dictionary.itemStates?.[trimmed]) {
+    return dictionary.itemStates[trimmed];
   }
 
-  let translatedMod = normalizedText;
+  // 4. (augmented) などのフラグ消去
+  let cleanLine = trimmed.replace(/\s*\((augmented|unmet)\)/gi, "");
 
+  // 5. ヘッダー置換 (Item Class / Rarity)
+  if (cleanLine.startsWith("アイテムクラス:")) {
+    const val = cleanLine.replace("アイテムクラス:", "").trim();
+    return `Item Class: ${dictionary.header?.itemClasses?.[val] || val}`;
+  }
+  if (cleanLine.startsWith("レアリティ:")) {
+    const val = cleanLine.replace("レアリティ:", "").trim();
+    return `Rarity: ${dictionary.header?.rarities?.[val] || val}`;
+  }
+
+  // 6. ステータス行・単位置換（「メートル」や「武器攻撃距離：」など）
+  for (const [jpKey, enKey] of Object.entries(dictionary.stats || {})) {
+    if (cleanLine.includes(jpKey)) {
+      cleanLine = cleanLine.replace(jpKey, enKey);
+    }
+  }
+
+  // 7. アイテム名・ユニーク名・ベース名置換（辞書から完全一致で引く）
+  if (dictionary.baseItems?.[cleanLine]) {
+    return dictionary.baseItems[cleanLine];
+  }
+
+  // 8. フレーバーテキスト（ポエム等）の削除
+  // 数字、記号、コロン、プラス等を含まない純日本語行はフレーバーとみなして除外
+  if (/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/.test(cleanLine) && 
+      !/[\d\+\%\:\=\-]/.test(cleanLine)) {
+    return null;
+  }
+
+  // 9. PoB特殊オーバーライドの適用
+  for (const override of dictionary.pobOverrides || []) {
+    const reg = new RegExp(override.jp, 'i');
+    if (reg.test(cleanLine)) {
+      return cleanLine.replace(reg, override.en);
+    }
+  }
+
+  // 10. RePoE Modパターンによる正規表現置換
   for (const rule of dictionary.mods || []) {
     try {
       const reg = new RegExp(rule.jp, 'i');
-      if (reg.test(normalizedText)) {
-        translatedMod = normalizedText.replace(reg, rule.en);
-        break;
+      if (reg.test(cleanLine)) {
+        return cleanLine.replace(reg, rule.en);
       }
     } catch (e) {}
   }
 
-  return translatedMod;
+  return cleanLine;
 }
 
 loadDictionary();
